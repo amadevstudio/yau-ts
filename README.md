@@ -36,7 +36,7 @@ export default function ({ appName }: {appName: string}) {
   return {
     start: {
       message: {
-        en: 'Welcome! Press the button below to open the app'
+        en: 'Welcome! This is the /start answer'
       },
     },
   };
