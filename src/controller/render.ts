@@ -42,8 +42,8 @@ async function messageMaster(
     resending,
     previousMessageStructures,
   }: {
-    resending?: boolean;
-    previousMessageStructures?: TResultMessageStructure[];
+    resending: boolean;
+    previousMessageStructures: TResultMessageStructure[];
   } = { resending: true, previousMessageStructures: [] }
 ): Promise<TResultMessageStructure[]> {
   // TODO: Prepare files: file or it's id
@@ -56,7 +56,7 @@ async function messageMaster(
   let prevSpoolerIndex = 0;
   const messageStructuresLen = messageStructures.length;
 
-  if (resending && previousMessageStructures !== undefined) {
+  if (resending) {
     previousMessageStructures.forEach((prevMessage) => {
       if (prevSpoolerIndex > messageStructuresLen) {
         messagesToDelete.push(prevMessage);
