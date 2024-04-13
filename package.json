@@ -4,6 +4,7 @@
   "description": "",
   "dependencies": {
     "node-telegram-bot-api": "^0.63.0",
+    "tslog": "^4.9.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -11,6 +12,7 @@
     "@types/node-telegram-bot-api": "^0.64.6",
     "eslint": "^8.57.0",
     "globals": "^15.0.0",
-    "ts-loader": "^9.5.1"
+    "ts-loader": "^9.5.1",
+    "typescript-eslint": "^7.6.0"
   }
 }

@@ -1,37 +1,49 @@
-import curry from '@framework/toolbox/curry';
+import {z} from "zod";
+import {TLogger} from "@framework/toolbox/logger";
 
-type TDictionary<AvailableLanguages extends string = string> = {
-  [key in string]: TDictionary | { [key in AvailableLanguages]: string };
+type Dictionary<AvailableLanguages extends string = string> = {
+  [key in string]: Dictionary | { [key in AvailableLanguages]: string };
 };
 
-export default function <AvailableLanguages>(
-  dictionary: TDictionary<AvailableLanguages>
+const FinalTranslationMapSchema = z.record(z.string(), z.string());
+
+export default function <AvailableLanguages extends string = string>(
+  dictionary: Dictionary<AvailableLanguages>
 ) {
   return {
-    t: (languageCode: AvailableLanguages, id: string[]): string => {
+    t: (frameworkLogger: TLogger, languageCode: AvailableLanguages) => (id: string[]): string => {
       try {
-        let currMap: TDictionary<AvailableLanguages>;
+        let currMap: Dictionary<AvailableLanguages> | undefined = undefined;
         for (const k in id) {
-          currMap = dictionary[k];
+          if (!FinalTranslationMapSchema.safeParse(dictionary[k]).success) {
+            currMap = dictionary[k] as Dictionary;
+          }
         }
-        return currMap[languageCode];
-      } catch {
+
+        if (currMap === undefined) {
+          throw new Error("Key don't exist:" + id.join('.'));
+        }
+
+        return (currMap as { [key in AvailableLanguages]: string })[languageCode];
+
+      } catch(error) {
+        frameworkLogger.error(error);
         return id.join('.');
       }
     },
   };
 }
 
-export function curryI18n(i18n: TI18n, languageCode: string): TI18nCurried {
+export function initializeI18n(i18n: TI18n | undefined, frameworkLogger: TLogger, languageCode: string): TI18nCurried {
   return {
-    t: curry(i18n.t)(languageCode),
+    t: i18n?.t(frameworkLogger, languageCode),
   };
 }
 
 export type TI18n = {
-  t: (languageCode: string, id: string[]) => string;
+  t: (frameworkLogger: TLogger, languageCode: string) => (id: string[]) => string;
 };
 
 export type TI18nCurried = {
-  t: (id: string[]) => string;
+  t: ((id: string[]) => string) | undefined;
 };

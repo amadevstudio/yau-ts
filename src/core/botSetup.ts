@@ -1,53 +1,60 @@
 import TelegramBot from 'node-telegram-bot-api';
-import { TBotConfig, TLibParams, TRoute } from '@framework/core/types';
-import curry from '@framework/toolbox/curry';
-import { TeleBot } from '@framework/controller/types';
-import { constructParams } from '@framework/core/methodParams';
-import { TI18n } from "@framework/i18n/setup";
+import {BotConfig, LibParams, Route} from '@framework/core/types';
+import {TeleBot} from '@framework/controller/types';
+import {constructParams} from '@framework/core/methodParams';
+import {TI18n} from "@framework/i18n/setup";
+import initializeLogger from "@framework/toolbox/logger";
 
-function processor(
+const frameworkLogger = initializeLogger();
+
+function process(
   bot: TeleBot,
   routeName: string,
-  routeParams: TRoute,
-  i18n: TI18n,
-  libParams: TLibParams
-) {
-  // TODO
-  // 1. Validator
-  // 2. Detect if command and clear storage; If message or command set resend flag
+  routeParams: Route,
+  i18n: TI18n | undefined) {
+  return function (
+    libParams: LibParams
+  ) {
+    // TODO
+    // 1. Validator
+    // 2. Detect if command and clear storage; If message or command set resend flag
 
-  routeParams.method.call(
-    constructParams(
-      bot,
-      routeName,
-      // routeParams,
-      i18n,
-      libParams
-    )
-  );
+    routeParams.method.call(
+      constructParams(
+        bot,
+        frameworkLogger,
+        routeName,
+        // routeParams,
+        i18n,
+        libParams,
+      )
+    );
+  }
 }
 
-function commandsListValidator(commands: string[], command: string) {
-  return commands.includes(command);
+function initializeValidateCommands(commands: string[]) {
+  return function (command: string) {
+    return commands.includes(command);
+  }
 }
 
-function initializeRoutes(bot: TeleBot, botConfig: TBotConfig, i18n: TI18n) {
+function initializeRoutes(bot: TeleBot, botConfig: BotConfig) {
   // TODO: std routes (e.g., goBack)
 
   // Initialize routes
   for (const [routeName, routeParams] of Object.entries(botConfig.routes)) {
-    const handlerCurry = curry(processor)(bot, routeName, routeParams, i18n);
+    const processQuery = process(bot, routeName, routeParams, botConfig.i18n);
 
     // Command section
     if (routeParams.availableFrom.includes('command')) {
-      const commandsListValidatorPartial = curry(commandsListValidator)(
-        'commands' in routeParams ? routeParams.commands : [routeName]
+      const validateCommands = initializeValidateCommands(
+        'commands' in routeParams && routeParams.commands !== undefined ? routeParams.commands : [routeName]
       );
 
       bot.on('message', (message, metadata) => {
         // Validate, if config have the route
-        if (commandsListValidatorPartial(message.text?.substring(1))) {
-          handlerCurry({ message, metadata, isCommand: true });
+        if (message.text !== undefined && validateCommands(message.text?.substring(1))) {
+          processQuery({message, metadata, isCommand: true});
         }
       });
     }
@@ -58,16 +65,15 @@ function initializeRoutes(bot: TeleBot, botConfig: TBotConfig, i18n: TI18n) {
 
 export default function initializeBot(
   token: string,
-  botConfig: TBotConfig,
-  i18n: TI18n,
+  botConfig: BotConfig,
 ) {
   const bot: TeleBot = new TelegramBot(token, {
     polling: true,
-    // @ts-ignore
+    // @ts-ignore (constructorOptions don't have property)
     testEnvironment: botConfig.testTelegram,
   });
 
-  initializeRoutes(bot, botConfig, i18n);
+  initializeRoutes(bot, botConfig);
 
   return bot;
 }

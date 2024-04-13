@@ -1,30 +1,32 @@
 import {
-  TeleBot,
-  TMessageStructure,
-  TResultMessageStructure,
+  TeleBot, TeleMessage,
+  MessageStructure,
+  ResultMessageStructure,
 } from '@framework/controller/types';
+import {boolean} from "zod";
 
 export default (bot: TeleBot) =>
   (
-    chat_id: number,
-    messages: TMessageStructure[],
+    chatId: number,
+    messages: MessageStructure[],
     { resending }: { resending: boolean }
   ) => {
     // TODO: get structures, get resending flag from storage,
     //  get prev state from storage, save rendered state, except errors:
     // TODO: for telegram timeout exceptions get pause or block and return
     //    else
-    // messageMaster(bot, chat_id, messages, { resending });
+    // messageMaster(bot, chatId, messages, { resending });
   };
 
 export const outerSender =
   (bot: TeleBot) =>
   async (
-    chat_id: number,
-    messages: TMessageStructure[]
-  ): Promise<TResultMessageStructure[]> => {
+    chatId: number,
+    messages: MessageStructure[]
+  ): Promise<ResultMessageStructure[]> => {
     try {
-      const result = messageMaster(bot, chat_id, messages, { resending: true });
+      const result = messageMaster(
+        bot, chatId, messages, { resending: true });
       // TODO: set user resend flag on sent
       return await result;
     } catch (error) {
@@ -37,26 +39,26 @@ export const outerSender =
 async function messageMaster(
   bot: TeleBot,
   chatId: number,
-  messageStructures: TMessageStructure[] = [],
+  messageStructures: MessageStructure[] = [],
   {
     resending,
     previousMessageStructures,
   }: {
-    resending: boolean;
-    previousMessageStructures: TResultMessageStructure[];
+    resending?: boolean;
+    previousMessageStructures?: ResultMessageStructure[];
   } = { resending: true, previousMessageStructures: [] }
-): Promise<TResultMessageStructure[]> {
+): Promise<ResultMessageStructure[]> {
   // TODO: Prepare files: file or it's id
 
-  const messagesToDelete: TResultMessageStructure[] = []; // Old messages
-  let messagesToEdit: { [key: number]: TMessageStructure } = {}; // Old message id => New message structure
-  let messagesToSend: TMessageStructure[] = []; // New messages
+  const messagesToDelete: ResultMessageStructure[] = []; // Old messages
+  let messagesToEdit: { [key: number]: MessageStructure } = {}; // Old message id => New message structure
+  let messagesToSend: MessageStructure[] = []; // New messages
 
   // Constructing
   let prevSpoolerIndex = 0;
   const messageStructuresLen = messageStructures.length;
 
-  if (resending) {
+  if (resending && previousMessageStructures !== undefined) {
     previousMessageStructures.forEach((prevMessage) => {
       if (prevSpoolerIndex > messageStructuresLen) {
         messagesToDelete.push(prevMessage);
@@ -78,7 +80,7 @@ async function messageMaster(
     messagesToSend.push(messageStructures[i]);
   }
 
-  const newMessageStructures: TResultMessageStructure[] = [];
+  const newMessageStructures: ResultMessageStructure[] = [];
 
   // Delete unwanted
   for (const message of messagesToDelete) {
@@ -95,18 +97,18 @@ async function messageMaster(
   for (const [stringId, message] of Object.entries(messagesToEdit)) {
     // TODO: const markup = buildMarkup(message)
     const id = parseInt(stringId);
-    let resultMessage;
+    let resultMessage: boolean | TeleMessage;
 
     if (message.type === 'text') {
       resultMessage = await bot.editMessageText(message.text, {
-        chatId,
+        chat_id: chatId,
         message_id: id,
         parse_mode: message.parseMode,
         disable_web_page_preview: message.disableWebPagePreview,
         // TODO: reply_markup: markup
       });
 
-      // TODO: implement another types
+      // TODO: implement other types
     } else {
       continue;
     }
@@ -114,7 +116,7 @@ async function messageMaster(
     newMessageStructures.push({
       id,
       type: message.type,
-      message: resultMessage,
+      message: typeof resultMessage !== "boolean" ? resultMessage : undefined,
     });
   }
 
@@ -130,7 +132,7 @@ async function messageMaster(
         // TODO: reply_markup: markup
       });
 
-      // TODO: implement another types
+      // TODO: implement other types
     } else {
       continue;
     }

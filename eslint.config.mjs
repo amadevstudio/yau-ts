@@ -1,5 +1,4 @@
 import globals from "globals";
-// @ts-ignore
 import pluginJs from "@eslint/js";
 import tseslint from "typescript-eslint";
 

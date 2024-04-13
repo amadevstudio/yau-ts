@@ -1,11 +1,11 @@
 import {
   TeleCallback,
   TeleMessage,
-  TeleMeta, TMessageStructure, TResultMessageStructure
+  TeleMeta, MessageStructure, ResultMessageStructure
 } from "@framework/controller/types";
-import { TI18nCurried } from '@framework/i18n/setup';
+import {TI18n, TI18nCurried} from '@framework/i18n/setup';
 
-export type TRoute<AvailableRoutes extends string = string> = {
+export type Route<AvailableRoutes extends string = string> = {
   method: Function;
   availableFrom: ('command' | 'message' | 'call')[];
   commands?: string[];
@@ -18,16 +18,17 @@ export type TRoute<AvailableRoutes extends string = string> = {
   // have_under_keyboard: bool | None
 };
 
-export type TRoutes<AvailableRoutes extends string = string> = {
-  [key in AvailableRoutes]: TRoute<AvailableRoutes>;
+export type Routes<AvailableRoutes extends string = string> = {
+  [key in AvailableRoutes]: Route<AvailableRoutes>;
 };
 
-export type TBotConfig<AvailableRoutes extends string = string> = {
-  routes: TRoutes<AvailableRoutes>;
+export type BotConfig<AvailableRoutes extends string = string> = {
+  routes: Routes<AvailableRoutes>;
   testTelegram?: boolean;
+  i18n?: TI18n;
 };
 
-export type TLibParams = (
+export type LibParams = (
   | {
       message: TeleMessage;
       callback?: TeleCallback;
@@ -42,24 +43,25 @@ export type TLibParams = (
 };
 
 
-type TRenderCurried = (
-  chat_id: number,
-  messages: TMessageStructure[],
-  { resending: boolean }
+type RenderCurried = (
+  chatId: number,
+  messages: MessageStructure[],
+  { resending }: {resending: boolean}
 ) => void;
-type TOuterSenderCurried = (
-  chat_id: number,
-  messages: TMessageStructure[]
-) => Promise<TResultMessageStructure[]>;
 
-export type TMessage = {
+type OuterSenderCurried = (
+  chatId: number,
+  messages: MessageStructure[]
+) => Promise<ResultMessageStructure[]>;
+
+export type Message = {
   id: number;
   text?: string;
   from: {
     id?: number;
   };
 };
-export type TConstructedParams = {
+export type ConstructedParams = {
   chat: {
     id: number;
   };
@@ -67,9 +69,9 @@ export type TConstructedParams = {
     languageCode: string;
   };
 
-  message?: TMessage;
+  message?: Message;
   callback?: {
-    message?: TMessage;
+    message?: Message;
     id: string;
   };
 
@@ -77,8 +79,8 @@ export type TConstructedParams = {
 
   unitedData: {};
 
-  render: TRenderCurried;
-  outerSender: TOuterSenderCurried;
+  render: RenderCurried;
+  outerSender: OuterSenderCurried;
 
   i18n: TI18nCurried;
 };

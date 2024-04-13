@@ -5,27 +5,27 @@ export type TeleMessage = TelegramBot.Message;
 export type TeleCallback = TelegramBot.CallbackQuery;
 export type TeleMeta = TelegramBot.Metadata;
 
-type TMessageTypes = 'text'; // TODO: 'image' | 'audio' ...
-type TButtonData<AvailableRoutes extends string> = {
+type MessageTypes = 'text'; // TODO: 'image' | 'audio' ...
+type ButtonData<AvailableRoutes extends string> = {
   tp: AvailableRoutes;
 };
-type TMarkupButton = {
+type MarkupButton = {
   text: string;
-  data: { string: string | number | null } & TButtonData<string>;
+  data: { string: string | number | null } & ButtonData<string>;
 };
-type TBase = {
-  type: TMessageTypes;
+type BaseMessageStructure = {
+  type: MessageTypes;
   markupType?: 'inline'; // TODO
-  markup?: TMarkupButton[][];
+  markup?: MarkupButton[][];
   parseMode?: 'MarkdownV2' | 'HTML';
   disableWebPagePreview?: boolean;
 };
-type TTextStructure = TBase & {
+type TextStructure = BaseMessageStructure & {
   text: string;
 };
-export type TMessageStructure = TTextStructure; // TODO: | Image | ...;
-export type TResultMessageStructure = {
+export type MessageStructure = TextStructure; // TODO: | Image | ...;
+export type ResultMessageStructure = {
   id: number;
-  type: TMessageTypes;
-  message: TeleMessage;
+  type: MessageTypes;
+  message?: TeleMessage;
 };

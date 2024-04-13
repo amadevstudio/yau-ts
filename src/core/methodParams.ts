@@ -1,17 +1,18 @@
-import { TConstructedParams, TLibParams } from "@framework/core/types";
+import { ConstructedParams, LibParams } from "@framework/core/types";
 import TelegramBot from 'node-telegram-bot-api';
 import { TeleBot } from '@framework/controller/types';
-import curry from '@framework/toolbox/curry';
 import render, { outerSender } from '@framework/controller/render';
-import { curryI18n, TI18n } from "@framework/i18n/setup";
+import { initializeI18n, TI18n } from "@framework/i18n/setup";
+import {TLogger} from "@framework/toolbox/logger";
 
 export function constructParams(
   bot: TeleBot,
+  frameworkLogger: TLogger,
   routeName: string,
   // routeParams: TRoute,
-  i18n: TI18n,
-  libParams: TLibParams
-): TConstructedParams {
+  i18n: TI18n | undefined,
+  libParams: LibParams
+): ConstructedParams {
   const messageData = (msg: TelegramBot.Message | undefined) => {
     return (
       msg && {
@@ -44,7 +45,7 @@ export function constructParams(
     routeName: routeName,
     // TODO: action_name: actionName,
 
-    // TODO: united_data: get_united_data(callback, chat_id, route_name, action_name),
+    // TODO: united_data: get_united_data(callback, chatId, route_name, action_name),
     unitedData: {},
 
     // TODO
@@ -54,9 +55,9 @@ export function constructParams(
     //
     // go_back_action: goBackModule.go_back,
 
-    render: curry(render)(bot),
-    outerSender: curry(outerSender)(bot),
+    render: render(bot),
+    outerSender: outerSender(bot),
 
-    i18n: curryI18n(i18n, languageCode),
+    i18n: initializeI18n(i18n, frameworkLogger, languageCode),
   };
 }
