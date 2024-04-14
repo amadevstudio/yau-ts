@@ -9,34 +9,45 @@ Simple example
 - main.ts
 ```ts
 import dotenv from 'dotenv';
+import path from 'path';
+
+const dirname = path.resolve();
+dotenv.config({ path: path.join(dirname, '.env') });
 
 import ENV from './env';
 
 import initializeBot from '@framework/core/botSetup';
-import { TBotConfig } from '@framework/core/types';
-import { routes, TAvailableRoutes } from './pkg/controller/routes';
+import { BotConfig } from '@framework/core/types';
+import { routes, AvailableRoutes } from './pkg/controller/routes';
 import setupI18n from '@framework/i18n/setup';
 
-import i18nConfig from './public/i18n';
+import configureI18n from './public/i18n';
 
-dotenv.config();
+const i18n = setupI18n(
+  configureI18n<'en'>({ appName: ENV.APP_NAME })
+);
 
-const botConfig: TBotConfig<TAvailableRoutes> = {
+const botConfig: BotConfig<AvailableRoutes> = {
   routes,
   testTelegram: ENV.TEST_TELEGRAM === 'true',
+  i18n,
 };
 
-const i18n = setupI18n<'en'>(i18nConfig({ appName: ENV.APP_NAME }));
-
-initializeBot(ENV.BOT_TOKEN, botConfig, i18n);
+initializeBot(ENV.BOT_TOKEN, botConfig);
 ```
 - i18n.ts
 ```ts
-export default function ({ appName }: {appName: string}) {
+import { Dictionary } from '@framework/i18n/setup';
+
+export default function <AvailableLanguages extends string = string>({
+                                                                       appName,
+                                                                     }: {
+  appName: string;
+}): Dictionary<AvailableLanguages> {
   return {
     start: {
       message: {
-        en: 'Welcome! This is the /start answer'
+        en: 'Welcome! This is the /start answer',
       },
     },
   };
@@ -44,12 +55,12 @@ export default function ({ appName }: {appName: string}) {
 ```
 - routes.ts
 ```ts
-import { TRoutes } from '@framework/core/types';
+import { Routes } from '@framework/core/types';
 import start from './user/start';
 
 const availableRoutes = ['start'] as const;
-export type TAvailableRoutes = (typeof availableRoutes)[number];
-export const routes: TRoutes<TAvailableRoutes> = {
+export type AvailableRoutes = (typeof availableRoutes)[number];
+export const routes: Routes<AvailableRoutes> = {
   start: {
     method: start,
     availableFrom: ['command'],
@@ -59,9 +70,9 @@ export const routes: TRoutes<TAvailableRoutes> = {
 ```
 - start.ts
 ```ts
-import { TConstructedParams } from "@framework/core/types";
+import { ConstructedParams } from "@framework/core/types";
 
-export default async function start(d: TConstructedParams) {
+export default async function start(d: ConstructedParams) {
   await d.outerSender(d.chat.id, [{
     type: 'text',
     text: d.i18n.t(['start', 'message'])

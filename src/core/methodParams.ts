@@ -2,7 +2,7 @@ import { ConstructedParams, LibParams } from "@framework/core/types";
 import TelegramBot from 'node-telegram-bot-api';
 import { TeleBot } from '@framework/controller/types';
 import render, { outerSender } from '@framework/controller/render';
-import { initializeI18n, TI18n } from "@framework/i18n/setup";
+import { initializeI18n, InitializeI18n } from "@framework/i18n/setup";
 import {TLogger} from "@framework/toolbox/logger";
 
 export function constructParams(
@@ -10,7 +10,7 @@ export function constructParams(
   frameworkLogger: TLogger,
   routeName: string,
   // routeParams: TRoute,
-  i18n: TI18n | undefined,
+  i18n: InitializeI18n | undefined,
   libParams: LibParams
 ): ConstructedParams {
   const messageData = (msg: TelegramBot.Message | undefined) => {

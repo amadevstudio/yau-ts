@@ -1,9 +1,11 @@
 import {
   TeleCallback,
   TeleMessage,
-  TeleMeta, MessageStructure, ResultMessageStructure
-} from "@framework/controller/types";
-import {TI18n, TI18nCurried} from '@framework/i18n/setup';
+  TeleMeta,
+  MessageStructure,
+  ResultMessageStructure,
+} from '@framework/controller/types';
+import { InitializeI18n, I18n } from '@framework/i18n/setup';
 
 export type Route<AvailableRoutes extends string = string> = {
   method: Function;
@@ -22,10 +24,12 @@ export type Routes<AvailableRoutes extends string = string> = {
   [key in AvailableRoutes]: Route<AvailableRoutes>;
 };
 
-export type BotConfig<AvailableRoutes extends string = string> = {
+export type BotConfig<
+  AvailableRoutes extends string = string
+> = {
   routes: Routes<AvailableRoutes>;
   testTelegram?: boolean;
-  i18n?: TI18n;
+  i18n?: InitializeI18n;
 };
 
 export type LibParams = (
@@ -42,11 +46,10 @@ export type LibParams = (
   metadata?: TeleMeta;
 };
 
-
 type RenderCurried = (
   chatId: number,
   messages: MessageStructure[],
-  { resending }: {resending: boolean}
+  { resending }: { resending: boolean }
 ) => void;
 
 type OuterSenderCurried = (
@@ -82,5 +85,5 @@ export type ConstructedParams = {
   render: RenderCurried;
   outerSender: OuterSenderCurried;
 
-  i18n: TI18nCurried;
+  i18n: I18n;
 };

@@ -3,7 +3,6 @@ import {
   MessageStructure,
   ResultMessageStructure,
 } from '@framework/controller/types';
-import {boolean} from "zod";
 
 export default (bot: TeleBot) =>
   (

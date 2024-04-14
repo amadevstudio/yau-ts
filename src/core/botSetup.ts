@@ -2,7 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import {BotConfig, LibParams, Route} from '@framework/core/types';
 import {TeleBot} from '@framework/controller/types';
 import {constructParams} from '@framework/core/methodParams';
-import {TI18n} from "@framework/i18n/setup";
+import { InitializeI18n } from "@framework/i18n/setup";
 import initializeLogger from "@framework/toolbox/logger";
 
 const frameworkLogger = initializeLogger();
@@ -11,7 +11,7 @@ function process(
   bot: TeleBot,
   routeName: string,
   routeParams: Route,
-  i18n: TI18n | undefined) {
+  i18n: InitializeI18n | undefined) {
   return function (
     libParams: LibParams
   ) {
@@ -19,7 +19,7 @@ function process(
     // 1. Validator
     // 2. Detect if command and clear storage; If message or command set resend flag
 
-    routeParams.method.call(
+    routeParams.method(
       constructParams(
         bot,
         frameworkLogger,
@@ -53,7 +53,7 @@ function initializeRoutes(bot: TeleBot, botConfig: BotConfig) {
 
       bot.on('message', (message, metadata) => {
         // Validate, if config have the route
-        if (message.text !== undefined && validateCommands(message.text?.substring(1))) {
+        if (message.text !== undefined && validateCommands(message.text.substring(1))) {
           processQuery({message, metadata, isCommand: true});
         }
       });
