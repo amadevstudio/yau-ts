@@ -4,15 +4,21 @@
   "description": "",
   "dependencies": {
     "node-telegram-bot-api": "^0.63.0",
-    "tslog": "^4.9.2",
-    "zod": "^3.22.4"
+    "tslog": "^4.9.3",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.0.0",
-    "@types/node-telegram-bot-api": "^0.64.6",
-    "eslint": "^8.57.0",
-    "globals": "^15.0.0",
+    "@eslint/js": "^9.17.0",
+    "@types/node-telegram-bot-api": "^0.64.7",
+    "eslint": "^8.57.1",
+    "globals": "^15.14.0",
     "ts-loader": "^9.5.1",
-    "typescript-eslint": "^7.6.0"
+    "typescript-eslint": "^7.18.0",
+    "@types/bun": "latest"
+  },
+  "module": "index.ts",
+  "type": "module",
+  "peerDependencies": {
+    "typescript": "^5.4.5"
   }
 }

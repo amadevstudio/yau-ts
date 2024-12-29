@@ -69,7 +69,6 @@ export default function initializeBot(
 ) {
   const bot: TeleBot = new TelegramBot(token, {
     polling: true,
-    // @ts-ignore (constructorOptions don't have property)
     testEnvironment: botConfig.testTelegram,
   });
 
