@@ -39,7 +39,7 @@ export function constructParams(
     message: messageData(libParams.message),
     callback: libParams.callback && {
       message: messageData(libParams.callback.message),
-      id: libParams.callback?.id!,
+      id: libParams.callback?.id,
     },
 
     routeName: routeName,
