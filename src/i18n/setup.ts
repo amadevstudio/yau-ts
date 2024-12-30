@@ -43,10 +43,10 @@ type NumeralDict<Languages extends string> = {
 export type Dictionary<
   ProjectAvailableLanguages extends string = DefaultAvailableLanguages
 > = {
-  [key: string]: {
-    s: LangDict<ProjectAvailableLanguages>;
+  [key: string]: Dictionary<ProjectAvailableLanguages> | {
+    s?: LangDict<ProjectAvailableLanguages>;
   } & {
-    n: NumeralDict<ProjectAvailableLanguages>;
+    n?: NumeralDict<ProjectAvailableLanguages>;
   };
 };
 
