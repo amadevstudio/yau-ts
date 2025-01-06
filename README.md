@@ -1,13 +1,21 @@
 # yau
 
-Deep alpha version, can only send messages  
+Alpha version, can render messages and use state, see the demo below
 
-Using asdf plugin manager  
+Using asdf plugin manager
 `asdf install nodejs`
 
 You must have Redis to keep user state
 
-Simple example
+Simple demo example:
+
+- packages.json
+
+```json
+"dependencies": {
+  "yau": "git+https://github.com/amadevstudio/yau"
+}
+```
 
 - main.ts
 
