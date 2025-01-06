@@ -1,6 +1,15 @@
 {
     "cSpell.words": [
+        "hdel",
+        "hget",
+        "hset",
+        "lindex",
+        "lrange",
+        "rpop",
+        "rpush",
         "Tele",
         "tslog"
-    ]
+    ],
+    "editor.indentSize": "tabSize",
+    "editor.tabSize": 2
 }

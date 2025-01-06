@@ -5,37 +5,40 @@ Deep alpha version, can only send messages
 Using asdf plugin manager  
 `asdf install nodejs`
 
+You must have Redis to keep user state
+
 Simple example
 
 - main.ts
 
 ```ts
-import dotenv from 'dotenv';
-import path from 'path';
+import dotenv from "dotenv";
+import path from "path";
+import ENV from "./env";
+
+import initializeBot from "yau/src/core/botSetup";
+import type { BotConfig } from "yau/src/core/types";
+import { type AvailableRoutes, routes } from "./controller/routes";
+import setupI18n from "yau/src/i18n/setup";
+
+import configureI18n from "./public/i18n";
 
 const dirname = path.resolve();
-dotenv.config({ path: path.join(dirname, '.env') });
-
-import ENV from './env';
-
-import initializeBot from '@framework/core/botSetup';
-import { BotConfig } from '@framework/core/types';
-import { routes, AvailableRoutes } from './pkg/controller/routes';
-import setupI18n from '@framework/i18n/setup';
-
-import configureI18n from './public/i18n';
+dotenv.config({ path: path.join(dirname, ".env") });
 
 const i18n = setupI18n(
-  configureI18n<'en'>({ appName: ENV.APP_NAME })
-);
+  configureI18n({ appName: ENV.APP_NAME }),
+  { fallbackLanguageCode: "ru" });
 
 const botConfig: BotConfig<AvailableRoutes> = {
+  defaultRoute: 'menu',
   routes,
-  testTelegram: ENV.TEST_TELEGRAM === 'true',
-  i18n,
+  testTelegram: ENV.TEST_TELEGRAM === "true",
+  environment: ENV.ENVIRONMENT,
+  i18n
 };
 
-initializeBot(ENV.BOT_TOKEN, botConfig);
+initializeBot(ENV.BOT_TOKEN, ENV.REDIS_URL, botConfig);
 ```
 
 - i18n.ts
@@ -73,29 +76,91 @@ export default function <AvailableLanguages extends string = string>({
 - routes.ts
 
 ```ts
-import { Routes } from '@framework/core/types';
-import start from './user/start';
+import type { Routes } from "yau/src/core/types";
+import { start, menu, deepMethod } from "./user/entry";
+import {
+  buildAvailableRoutes,
+  buildRoutes,
+} from "yau/src/controller/defaultRoutes";
 
-const availableRoutes = ['start'] as const;
-export type AvailableRoutes = (typeof availableRoutes)[number];
-export const routes: Routes<AvailableRoutes> = {
+const localRoutes: Routes = {
   start: {
     method: start,
-    availableFrom: ['command'],
-    routes: ['start'],
+    availableFrom: ["command"],
+    routes: ["menu"],
+  },
+  menu: {
+    method: menu,
+    availableFrom: ["command", "callback"],
+  },
+  deepMethod: {
+    method: deepMethod,
+    availableFrom: ["callback"],
   },
 };
+
+const availableRoutes = buildAvailableRoutes<keyof typeof localRoutes>(
+  Object.keys(localRoutes) as (keyof typeof localRoutes)[]
+);
+
+export type AvailableRoutes = (typeof availableRoutes)[number];
+
+export const routes: Routes<AvailableRoutes> = buildRoutes(localRoutes);
 ```
 
 - start.ts
 
 ```ts
-import { ConstructedParams } from "@framework/core/types";
+import type { MessageStructure } from "yau/src/controller/types";
+import type { ConstructedParams } from "yau/src/core/types";
 
-export default async function start(d: ConstructedParams) {
-  await d.outerSender(d.chat.id, [{
-    type: 'text',
-    text: d.i18n.t(['start', 's', 'message']) + d.i18n.t(['start', 'n', 'message'], { num: 2, vars: ["2"] })
-  }]);
+export async function start(d: ConstructedParams) {
+  const messages: MessageStructure[] = [
+    {
+      type: "text",
+      text: d.i18n.t(["start", "s", "message"]),
+      inlineMarkup: [
+        [{ text: "Open menu", data: { tp: "menu" } }],
+        [{ text: "Or go deeper", data: { tp: "deepMethod" } }],
+      ],
+    },
+  ];
+
+  d.render(messages, { resending: d.isCommand });
 }
+
+export async function menu(d: ConstructedParams) {
+  const messages: MessageStructure[] = [
+    {
+      type: "text",
+      text: "Hello there",
+      inlineMarkup: [[{ text: "Deeper", data: { tp: "deepMethod" } }]],
+    },
+    {
+      type: "text",
+      text: "And there",
+      inlineMarkup: [
+        [
+          {
+            text: "Go back",
+            data: { tp: "bck" },
+          },
+        ],
+      ],
+    },
+  ];
+  d.render(messages, { resending: d.isCommand });
+}
+
+export async function deepMethod(d: ConstructedParams) {
+  const messages: MessageStructure[] = [
+    {
+      type: "text",
+      text: "Just goBack state",
+      inlineMarkup: [[{ text: "Go back", data: { tp: "bck" } }]],
+    },
+  ];
+  d.render(messages);
+}
+
 ```

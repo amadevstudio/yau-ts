@@ -4,6 +4,7 @@
   "description": "",
   "dependencies": {
     "node-telegram-bot-api": "^0.63.0",
+    "redis": "^4.7.0",
     "tslog": "^4.9.3",
     "zod": "^3.24.1"
   },

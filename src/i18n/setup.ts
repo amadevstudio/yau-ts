@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TLogger } from '@framework/toolbox/logger';
+import { FrameworkLogger } from '@framework/toolbox/logger';
 
 class TranslationEmpty extends Error {
   constructor(msg: string) {
@@ -98,7 +98,7 @@ export default function setupI18n<
 ): InitializeI18n {
   return {
     t:
-      (frameworkLogger: TLogger, languageCode: string) =>
+      (frameworkLogger: FrameworkLogger, languageCode: string) =>
       (
         id: string[],
         params: { num?: number; vars?: string[] } = {}
@@ -178,7 +178,7 @@ const fallbackT = (id: string[]) => {
 
 export function initializeI18n(
   i18n: InitializeI18n | undefined,
-  frameworkLogger: TLogger,
+  frameworkLogger: FrameworkLogger,
   languageCode: string
 ): I18n {
   return {
@@ -188,7 +188,7 @@ export function initializeI18n(
 
 export type InitializeI18n = {
   t: (
-    frameworkLogger: TLogger,
+    frameworkLogger: FrameworkLogger,
     languageCode: string
   ) => (id: string[], params?: { num?: number; vars?: string[] }) => string;
 };
