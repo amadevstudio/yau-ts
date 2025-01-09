@@ -2,10 +2,10 @@ import { TeleCallback, TeleMessage } from '@framework/controller/types';
 import { getCallbackType } from '@framework/service/stateDataService';
 import { UsersStateService } from '@framework/service/userStateService';
 import { Route } from './types';
-
+import { defaultActionNamesMap } from '@framework/controller/defaultRoutes';
 
 export function validateGoBack(callback: TeleCallback) {
-  return getCallbackType(callback) === 'bck';
+  return getCallbackType(callback) === defaultActionNamesMap.$back;
 }
 
 // Curry validate commands for a route
@@ -60,15 +60,18 @@ export function initializeValidateAction<
 ) {
   const callbackValidator = initializeValidateCallback(routeName);
 
-  return async function(callback: TeleCallback) {
+  return async function (callback: TeleCallback) {
     // TODO: get chat id without message?
     if (callback.message?.chat.id === undefined) {
       return;
     }
 
     return (
-        await usersStateService.getUserCurrentState(callback.message?.chat.id) === routeName
-        || routeParams.actions?.[actionName]?.stateIndependent === true
-      ) && callbackValidator(callback);
+      ((await usersStateService.getUserCurrentState(
+        callback.message?.chat.id
+      )) === routeName ||
+        routeParams.actions?.[actionName]?.stateIndependent === true) &&
+      callbackValidator(callback)
+    );
   };
 }

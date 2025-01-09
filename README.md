@@ -20,30 +20,34 @@ Simple demo example:
 - main.ts
 
 ```ts
-import dotenv from "dotenv";
-import path from "path";
 import ENV from "./env";
 
 import initializeBot from "yau/src/core/botSetup";
 import type { BotConfig } from "yau/src/core/types";
-import { type AvailableRoutes, routes } from "./controller/routes";
+import {
+  type AvailableActions,
+  type AvailableRoutes,
+  routes,
+} from "./controller/routes";
 import setupI18n from "yau/src/i18n/setup";
 
 import configureI18n from "./public/i18n";
 
-const dirname = path.resolve();
-dotenv.config({ path: path.join(dirname, ".env") });
+const i18n = setupI18n(configureI18n({ appName: ENV.APP_NAME }), {
+  fallbackLanguageCode: "ru",
+});
 
-const i18n = setupI18n(
-  configureI18n({ appName: ENV.APP_NAME }),
-  { fallbackLanguageCode: "ru" });
-
-const botConfig: BotConfig<AvailableRoutes> = {
-  defaultRoute: 'menu',
+const botConfig: BotConfig<AvailableRoutes, AvailableActions> = {
   routes,
+  defaultRoute: "start",
+
+  i18n,
+  defaultTextKeys: {
+    goBack: ["navigation", "s", "goBack"],
+  },
+
   testTelegram: ENV.TEST_TELEGRAM === "true",
   environment: ENV.ENVIRONMENT,
-  i18n
 };
 
 initializeBot(ENV.BOT_TOKEN, ENV.REDIS_URL, botConfig);
@@ -52,46 +56,59 @@ initializeBot(ENV.BOT_TOKEN, ENV.REDIS_URL, botConfig);
 - i18n.ts
 
 ```ts
-import { Dictionary } from '@framework/i18n/setup';
+import type { Dictionary } from "yau/src/i18n/setup";
 
-export default function <AvailableLanguages extends string = string>({
-                                                                       appName,
-                                                                     }: {
-  appName: string;
-}): Dictionary<AvailableLanguages> {
+type AvailableLanguages = "ru";
+
+const navigation = {
+  s: {
+    goBack: {
+      en: "<< Go back",
+      ru: "<< Назад",
+    },
+  },
+};
+
+function makeStart(appName: string) {
   return {
-    start: {
-      s: {
-        message: {
-          en: `Welcome to ${appName}! This is the /start answer. We have `,
-        },
+    s: {
+      message: {
+        // en: `Welcome to ${appName}! This is the /start answer`,
+        ru: `Добро пожаловать в ${appName}`,
       },
-      n: {
-        message: {
-          singular: {
-            en: '{0} star',
-          },
-          unite: {
-            en: '{0} stars'
-          }
-        }
-      }
     },
   };
 }
+
+export default function configureI18n({
+  appName,
+}: {
+  appName: string;
+}): Dictionary<AvailableLanguages> {
+  return {
+    navigation,
+
+    start: makeStart(appName),
+  };
+}
+
 ```
 
 - routes.ts
 
 ```ts
-import type { Routes } from "yau/src/core/types";
+import type { Routes, LocalRoutes } from "yau/src/core/types";
 import { start, menu, deepMethod } from "./user/entry";
 import {
-  buildAvailableRoutes,
+  buildRoutesList,
   buildRoutes,
+  buildEntityNamesMap,
 } from "yau/src/controller/defaultRoutes";
 
-const localRoutes: Routes = {
+type LocalRouteNames = "start" | "menu" | "deepMethod";
+type LocalActionNames = string;
+
+const localRoutes: LocalRoutes<LocalRouteNames, LocalActionNames> = {
   start: {
     method: start,
     availableFrom: ["command"],
@@ -107,13 +124,19 @@ const localRoutes: Routes = {
   },
 };
 
-const availableRoutes = buildAvailableRoutes<keyof typeof localRoutes>(
-  Object.keys(localRoutes) as (keyof typeof localRoutes)[]
+export const localRouteNameMap = buildEntityNamesMap(localRoutes);
+
+const availableRoutes = buildRoutesList<LocalRouteNames>(
+  Object.keys(localRoutes) as LocalRouteNames[]
 );
+
+console.log(availableRoutes);
 
 export type AvailableRoutes = (typeof availableRoutes)[number];
 
 export const routes: Routes<AvailableRoutes> = buildRoutes(localRoutes);
+
+export type AvailableActions = LocalActionNames;
 ```
 
 - start.ts
@@ -121,6 +144,7 @@ export const routes: Routes<AvailableRoutes> = buildRoutes(localRoutes);
 ```ts
 import type { MessageStructure } from "yau/src/controller/types";
 import type { ConstructedParams } from "yau/src/core/types";
+import { localRouteNameMap } from "../routes";
 
 export async function start(d: ConstructedParams) {
   const messages: MessageStructure[] = [
@@ -128,8 +152,13 @@ export async function start(d: ConstructedParams) {
       type: "text",
       text: d.i18n.t(["start", "s", "message"]),
       inlineMarkup: [
-        [{ text: "Open menu", data: { tp: "menu" } }],
-        [{ text: "Or go deeper", data: { tp: "deepMethod" } }],
+        [d.components.buildButton(localRouteNameMap.menu, "Open menu")],
+        [
+          d.components.buildButton(
+            localRouteNameMap.deepMethod,
+            "Or go deeper"
+          ),
+        ],
       ],
     },
   ];
@@ -142,19 +171,14 @@ export async function menu(d: ConstructedParams) {
     {
       type: "text",
       text: "Hello there",
-      inlineMarkup: [[{ text: "Deeper", data: { tp: "deepMethod" } }]],
+      inlineMarkup: [
+        [d.components.buildButton(localRouteNameMap.deepMethod, "Deeper")],
+      ],
     },
     {
       type: "text",
       text: "And there",
-      inlineMarkup: [
-        [
-          {
-            text: "Go back",
-            data: { tp: "bck" },
-          },
-        ],
-      ],
+      inlineMarkup: d.components.goBack.buildLayout(),
     },
   ];
   d.render(messages, { resending: d.isCommand });
@@ -165,10 +189,9 @@ export async function deepMethod(d: ConstructedParams) {
     {
       type: "text",
       text: "Just goBack state",
-      inlineMarkup: [[{ text: "Go back", data: { tp: "bck" } }]],
+      inlineMarkup: d.components.goBack.buildLayout(),
     },
   ];
   d.render(messages);
 }
-
 ```

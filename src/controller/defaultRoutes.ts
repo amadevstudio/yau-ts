@@ -1,27 +1,64 @@
 import { Routes } from '@framework/core/types';
 
-export const defaultRoutes = {
-  empty: null,
-};
-export const defaultRouteNames = Object.keys(
-  defaultRoutes
-) as (keyof typeof defaultRoutes)[];
-export type DefaultRouteNames = (typeof defaultRouteNames)[number];
+export function buildEntityNamesMap<T extends string>(
+  entity: Record<T, unknown>
+): { [key in T]: T } {
+  const arr = Object.keys(entity) as T[];
 
-export function buildAvailableRoutes<AvailableRoutes extends string>(
+  return arr.reduce((acc, key) => {
+    acc[key] = key;
+    return acc;
+  }, {} as Record<T, T>);
+}
+
+// ------
+// Routes
+
+export const defaultRoutes = {
+  $empty: null,
+};
+
+export type DefaultRouteNames = keyof typeof defaultRoutes;
+
+export const defaultRouteNamesMap = buildEntityNamesMap(defaultRoutes);
+
+export function buildRoutesList<AvailableRoutes extends string>(
   routeNames: AvailableRoutes[]
 ): (DefaultRouteNames | AvailableRoutes)[] {
-  return [...routeNames, ...defaultRouteNames] as const;
+  return [
+    ...routeNames,
+    ...(Object.keys(defaultRoutes) as DefaultRouteNames[]),
+  ] as const;
 }
 
 export function buildRoutes(routes: Routes) {
   return { ...routes, ...defaultRoutes };
 }
 
+// -------
+// Actions
+
 export const defaultActions = {
-  bck: null,
+  $back: null,
 };
-export const defaultActionNames = Object.keys(
-  defaultActions
-) as (keyof typeof defaultActions)[];
-export type DefaultActionNames = (typeof defaultActionNames)[number];
+
+export type DefaultActionNames = keyof typeof defaultActions;
+
+export const defaultActionNamesMap = buildEntityNamesMap(defaultActions);
+
+export function buildActionsList<AvailableActions extends string>(
+  actionNames: AvailableActions[]
+): (DefaultActionNames | AvailableActions)[] {
+  return [
+    ...actionNames,
+    ...(Object.keys(defaultActions) as DefaultActionNames[]),
+  ] as const;
+}
+
+export function buildActions(routes: Routes) {
+  const actions = Object.values(routes)
+    .map((route) => route?.actions ?? [])
+    .flat();
+
+  return { ...actions, ...defaultActions };
+}

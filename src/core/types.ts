@@ -5,6 +5,7 @@ import {
   MessageStructure,
   ResultMessageStructure,
   TeleBot,
+  MarkupButton,
 } from '@framework/controller/types';
 import { InitializeI18n, I18n } from '@framework/i18n/setup';
 import { UserStateService } from '@framework/service/userStateService';
@@ -51,7 +52,7 @@ export type Message = {
   };
 };
 
-export type ConstructedParams = {
+type MutualConstructedParams = {
   chat: {
     id: number;
   };
@@ -59,6 +60,13 @@ export type ConstructedParams = {
     languageCode: string;
   };
 
+  services: { userStateService: UserStateService };
+};
+
+export type ConstructedParams<
+  AvailableRoutes extends string = string,
+  AvailableActions extends string = string
+> = MutualConstructedParams & {
   message?: Message;
   callback?: {
     message?: Message;
@@ -81,13 +89,30 @@ export type ConstructedParams = {
   renderToChat: RenderToChatCurried;
   outerSender: OuterSenderCurried;
 
-  i18n: I18n;
+  components: {
+    goBack: {
+      buildButton: (customText?: string) => MarkupButton;
+      buildRow: (customText?: string) => MarkupButton[];
+      buildLayout: (customText?: string) => MarkupButton[][];
+    };
 
-  services: { userStateService: UserStateService };
+    buildButton: (
+      type: AvailableRoutes | AvailableActions,
+      text: string,
+      data?: Record<string, unknown>
+    ) => MarkupButton<AvailableRoutes>;
+  };
+
+  i18n: I18n;
 };
 
-export type Route<AvailableRoutes extends string = string> = {
-  method: (d: ConstructedParams) => Promise<void | false>;
+export type Route<
+  AvailableRoutes extends string = string,
+  AvailableActions extends string = string
+> = {
+  method: (
+    d: ConstructedParams<AvailableRoutes, AvailableActions>
+  ) => Promise<void | false>;
   availableFrom: ('command' | 'message' | 'callback')[];
   commands?: string[];
   routes?: AvailableRoutes[];
@@ -97,44 +122,56 @@ export type Route<AvailableRoutes extends string = string> = {
   actions?: Record<
     string,
     {
-      method: (d: ConstructedParams) => Promise<void>;
+      method: (
+        d: ConstructedParams<AvailableRoutes, AvailableActions>
+      ) => Promise<void>;
       stateIndependent?: boolean;
     }
   >;
-  validator?: (d: ConstructedParams) => boolean;
+  validator?: (
+    d: ConstructedParams<AvailableRoutes, AvailableActions>
+  ) => boolean;
   // TODO: hasUnderKeyboard?: boolean
 };
 
-export type Routes<AvailableRoutes extends string = string> = {
-  [key in
-    | AvailableRoutes
-    | keyof typeof defaultRoutes]: Route<AvailableRoutes> | null;
+export type LocalRoutes<
+  AvailableRoutes extends string = string,
+  AvailableActions extends string = string
+> = {
+  [key in AvailableRoutes]: Route<AvailableRoutes, AvailableActions>;
 };
 
-export type BotConfig<AvailableRoutes extends string = string> = {
-  routes: Routes<AvailableRoutes>;
+export type Routes<
+  AvailableRoutes extends string = string,
+  AvailableActions extends string = string
+> = {
+  [key in AvailableRoutes | keyof typeof defaultRoutes]: Route<
+    AvailableRoutes,
+    AvailableActions
+  > | null;
+};
+
+export type BotConfig<
+  AvailableRoutes extends string = string,
+  AvailableActions extends string = string
+> = {
+  routes: Routes<AvailableRoutes, AvailableActions>;
   defaultRoute: AvailableRoutes;
-  testTelegram?: boolean;
+
   i18n?: InitializeI18n;
+  defaultTextKeys: {
+    goBack: string[];
+  };
+
+  testTelegram?: boolean;
   environment?: 'development' | 'production';
 };
 
-export type ConstructedServiceParams = {
+export type ConstructedServiceParams = MutualConstructedParams & {
   bot: TeleBot;
   frameworkLogger: FrameworkLogger;
   botConfig: BotConfig;
   libParams: LibParams;
   routes: Routes;
   storage: StorageRepository;
-
-  chat: {
-    id: number;
-  };
-  user: {
-    languageCode: string;
-  };
-
-  services: {
-    userStateService: UserStateService;
-  };
 };

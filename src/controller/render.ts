@@ -68,9 +68,8 @@ async function render(
   // TODO: catch telegram api exceptions and react: remove user of bot blocked or timeout
 }
 
-export const outerSender =
-  (bot: TeleBot, userStateService: UserStateService) =>
-  async (
+export function makeOuterSender(bot: TeleBot, userStateService: UserStateService) {
+  return async (
     chatId: number,
     messages: MessageStructure[]
   ): Promise<ResultMessageStructure[]> => {
@@ -86,6 +85,7 @@ export const outerSender =
     //   throw error;
     // }
   };
+}
 
 function prepareMarkup(message: MessageStructure): {
   inline_keyboard: TeleInlineKeyboardButton[][];

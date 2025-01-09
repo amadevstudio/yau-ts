@@ -13,7 +13,7 @@ import {
 import initializeLogger from '@framework/toolbox/logger';
 import initStorage, { StorageRepository } from '@framework/repository/storage';
 import {
-  emptyStateInputStateCorrector,
+  correctEmptyStateInputState,
   goBackProcessor,
 } from '@framework/controller/controllers';
 import {
@@ -64,7 +64,7 @@ function serviceControllers(
 
   // If status is 'empty' and previous waits for text, "goBack" to previously and process
   bot.on('message', (message, metadata) => {
-    serviceProcessQuery(emptyStateInputStateCorrector, { message, metadata });
+    serviceProcessQuery(correctEmptyStateInputState, { message, metadata });
   });
 
   // /Outer middlewares

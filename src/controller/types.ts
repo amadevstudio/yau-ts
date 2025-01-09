@@ -7,28 +7,41 @@ export type TeleMeta = TelegramBot.Metadata;
 export type TeleInlineKeyboardButton = InlineKeyboardButton;
 
 type MessageTypes = 'text'; // TODO: 'image' | 'audio' ...
-type ButtonData<AvailableRoutes extends string> = {
-  tp: AvailableRoutes;
+export type ButtonData<
+  AvailableRoutes extends string = string,
+  AvailableActions extends string = string
+> = {
+  $tp?: AvailableRoutes | AvailableActions;
 };
-type MarkupButton<AvailableRoutes extends string> = {
+export type MarkupButton<
+  AvailableRoutes extends string = string,
+  AvailableActions extends string = string
+> = {
   text: string;
   data: {
     [key in string]: string | number | null;
-  } & ButtonData<AvailableRoutes>;
+  } & ButtonData<AvailableRoutes, AvailableActions>;
 };
-type BaseMessageStructure<AvailableRoutes extends string> = {
+type BaseMessageStructure<
+  AvailableRoutes extends string,
+  AvailableActions extends string
+> = {
   type: MessageTypes;
   // TODO: add more types
-  inlineMarkup?: MarkupButton<AvailableRoutes>[][];
+  inlineMarkup?: MarkupButton<AvailableRoutes, AvailableActions>[][];
   parseMode?: 'MarkdownV2' | 'HTML';
   disableWebPagePreview?: boolean;
 };
-type TextStructure<AvailableRoutes extends string> =
-  BaseMessageStructure<AvailableRoutes> & {
-    text: string;
-  };
-export type MessageStructure<AvailableRoutes extends string = string> =
-  TextStructure<AvailableRoutes>; // TODO: | Image | ...;
+type TextStructure<
+  AvailableRoutes extends string,
+  AvailableActions extends string
+> = BaseMessageStructure<AvailableRoutes, AvailableActions> & {
+  text: string;
+};
+export type MessageStructure<
+  AvailableRoutes extends string = string,
+  AvailableActions extends string = string
+> = TextStructure<AvailableRoutes, AvailableActions>; // TODO: | Image | ...;
 export type ResultMessageStructure = {
   id: number;
   type: MessageTypes;

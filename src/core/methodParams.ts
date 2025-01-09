@@ -12,9 +12,9 @@ import {
 import {
   makeRender,
   makeRenderToChat,
-  outerSender,
+  makeOuterSender,
 } from '@framework/controller/render';
-import { initializeI18n, InitializeI18n } from '@framework/i18n/setup';
+import { initializeI18n } from '@framework/i18n/setup';
 import { FrameworkLogger } from '@framework/toolbox/logger';
 import makeUserStateService, {
   type UserStateService,
@@ -22,6 +22,8 @@ import makeUserStateService, {
 import { StorageRepository } from '@framework/repository/storage';
 import { getUnitedData } from '@framework/service/stateDataService';
 import { goBackProcessor } from '@framework/controller/controllers';
+import makeGoBack from '@framework/components/goBack';
+import { buildInlineMarkupButton } from '@framework/components/button';
 
 // Dig message and callback
 function separateMessageAndCallback(libParams: LibParams): {
@@ -125,7 +127,7 @@ export async function constructParams<
   libParams: LibParams;
   storage: StorageRepository;
   isStepBack?: boolean;
-}): Promise<ConstructedParams> {
+}): Promise<ConstructedParams<RouteNames, ActionNames>> {
   const { message, callback } = separateMessageAndCallback(libParams);
 
   const messageData = (msg: TeleMessage | undefined) => {
@@ -150,7 +152,7 @@ export async function constructParams<
   const languageCode = (message.from?.language_code ||
     callback?.from.language_code)!;
 
-  const i18n: InitializeI18n | undefined = botConfig.i18n;
+  const i18n = initializeI18n(botConfig.i18n, frameworkLogger, languageCode);
 
   return {
     ...mutualParams,
@@ -184,8 +186,17 @@ export async function constructParams<
       mutualParams.chat.id
     ),
     renderToChat: makeRenderToChat(bot, mutualParams.services.userStateService),
-    outerSender: outerSender(bot, mutualParams.services.userStateService),
+    outerSender: makeOuterSender(bot, mutualParams.services.userStateService),
 
-    i18n: initializeI18n(i18n, frameworkLogger, languageCode),
+    components: {
+      goBack: makeGoBack({
+        defaultTextKey: botConfig?.defaultTextKeys?.goBack,
+        i18n,
+      }),
+
+      buildButton: buildInlineMarkupButton<RouteNames, ActionNames>,
+    },
+
+    i18n: i18n,
   };
 }

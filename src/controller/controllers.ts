@@ -1,11 +1,10 @@
 import { constructParams } from '@framework/core/methodParams';
 import { ConstructedServiceParams } from '@framework/core/types';
+import { DefaultRouteNames, defaultRouteNamesMap } from './defaultRoutes';
 
-export async function emptyStateInputStateCorrector(
-  d: ConstructedServiceParams
-) {
+export async function correctEmptyStateInputState(d: ConstructedServiceParams) {
   const [prev, curr] =
-    await d.services.userStateService.getUserPreviousAndCurrentStates();
+    (await d.services.userStateService.getUserPreviousAndCurrentStates()) as DefaultRouteNames[];
   if (prev === undefined) {
     return;
   }
@@ -26,7 +25,7 @@ export async function emptyStateInputStateCorrector(
   // (Prev waits for input or someone waits for input when prev is active) and empty is curr
   if (
     (d.routes[prev]?.waitsForInput || someoneHasStateForInput) &&
-    curr === 'empty'
+    curr === defaultRouteNamesMap.$empty
   ) {
     if (d.botConfig.environment === 'development') {
       d.frameworkLogger.debug(
