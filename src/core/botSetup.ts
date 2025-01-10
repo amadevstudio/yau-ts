@@ -5,7 +5,7 @@ import {
   LibParams,
   Route,
 } from '@framework/core/types';
-import { TeleBot } from '@framework/controller/types';
+import { TeleBot, TeleCallback } from '@framework/controller/types';
 import {
   constructParams,
   constructServiceParams,
@@ -25,8 +25,6 @@ import {
 } from './validators';
 import { makeUsersStateService } from '@framework/service/userStateService';
 
-const frameworkLogger = initializeLogger();
-
 // Curry service controllers
 function makeServiceProcessQuery(
   bot: TeleBot,
@@ -43,7 +41,6 @@ function makeServiceProcessQuery(
   ) {
     const csp = constructServiceParams({
       bot,
-      frameworkLogger,
       botConfig,
       libParams,
       storage,
@@ -57,25 +54,16 @@ function serviceControllers(
   bot: TeleBot,
   serviceProcessQuery: ReturnType<typeof makeServiceProcessQuery>
 ) {
-  // ---
-  // Outer middlewares
+  // GoBack module
+  bot.on('callback_query', (callback: TeleCallback) => {
+    if (validateGoBack(callback))
+      serviceProcessQuery(goBackProcessor, {
+        callback,
+        logger: initializeLogger(),
+      });
+  });
 
   // TODO: Catch all message when under maintenance and show maintenance message and return false
-
-  // If status is 'empty' and previous waits for text, "goBack" to previously and process
-  bot.on('message', (message, metadata) => {
-    serviceProcessQuery(correctEmptyStateInputState, { message, metadata });
-  });
-
-  // /Outer middlewares
-  // ---
-
-  // GoBack module
-  bot.on('callback_query', (callback) => {
-    if (validateGoBack(callback))
-      serviceProcessQuery(goBackProcessor, { callback });
-  });
-
   return true;
 }
 
@@ -97,7 +85,6 @@ function makeProcessQuery(
       (typeof actions)[number]
     >({
       bot,
-      frameworkLogger,
       routeName,
       botConfig,
       libParams,
@@ -105,7 +92,7 @@ function makeProcessQuery(
     });
 
     if (botConfig.environment === 'development') {
-      frameworkLogger.debug(
+      libParams.logger.debug(
         'States before interaction:',
         await cp.services.userStateService.getUserStates()
       );
@@ -146,12 +133,12 @@ function makeProcessQuery(
     if (changeState !== false) {
       await cp.services.userStateService.addUserState(cp.routeName);
       if (botConfig.environment === 'development') {
-        frameworkLogger.debug('Changing state to', cp.routeName);
+        libParams.logger.debug('Changing state to', cp.routeName);
       }
     }
 
     if (botConfig.environment === 'development') {
-      frameworkLogger.debug(
+      libParams.logger.debug(
         'States after interaction:',
         await cp.services.userStateService.getUserStates()
       );
@@ -177,7 +164,6 @@ function makeProcessAction(
       (typeof actions)[number]
     >({
       bot,
-      frameworkLogger,
       routeName,
       actionName,
       botConfig,
@@ -199,10 +185,9 @@ async function initializeRoutes({
   botConfig: BotConfig;
   storage: StorageRepository;
 }) {
-  const shouldProcess = serviceControllers(
-    bot,
-    makeServiceProcessQuery(bot, botConfig, storage)
-  );
+  const serviceProcessQuery = makeServiceProcessQuery(bot, botConfig, storage);
+  const shouldProcess = serviceControllers(bot, serviceProcessQuery);
+  // Block processing on bot init
   if (!shouldProcess) {
     return;
   }
@@ -238,7 +223,12 @@ async function initializeRoutes({
           message.text !== undefined &&
           validateCommands(message.text.substring(1))
         ) {
-          await processQuery({ message, metadata, isCommand: true });
+          await processQuery({
+            message,
+            metadata,
+            isCommand: true,
+            logger: initializeLogger(),
+          });
         }
       });
     }
@@ -252,7 +242,15 @@ async function initializeRoutes({
 
       bot.on('message', async (message, metadata) => {
         if (message !== undefined && (await validateMessage(message))) {
-          await processQuery({ message, metadata });
+          // If status is 'empty' and previous waits for text, "goBack" to previously and process
+
+          await serviceProcessQuery(correctEmptyStateInputState, {
+            message,
+            metadata,
+            logger: initializeLogger(),
+          });
+
+          await processQuery({ message, metadata, logger: initializeLogger() });
         }
       });
     }
@@ -263,7 +261,7 @@ async function initializeRoutes({
 
       bot.on('callback_query', async (callback) => {
         if (validateCallback(callback)) {
-          await processQuery({ callback });
+          await processQuery({ callback, logger: initializeLogger() });
         }
       });
     }
@@ -288,7 +286,7 @@ async function initializeRoutes({
 
         bot.on('callback_query', async (callback) => {
           if (await validateAction(callback)) {
-            await processAction({ callback });
+            await processAction({ callback, logger: initializeLogger() });
           }
         });
       }

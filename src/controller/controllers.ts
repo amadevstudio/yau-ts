@@ -28,7 +28,7 @@ export async function correctEmptyStateInputState(d: ConstructedServiceParams) {
     curr === defaultRouteNamesMap.$empty
   ) {
     if (d.botConfig.environment === 'development') {
-      d.frameworkLogger.debug(
+      d.libParams.logger.debug(
         `States before state correction`,
         await d.services.userStateService.getUserStates()
       );
@@ -37,7 +37,7 @@ export async function correctEmptyStateInputState(d: ConstructedServiceParams) {
     await d.services.userStateService.deleteUserCurrentState();
 
     if (d.botConfig.environment === 'development') {
-      d.frameworkLogger.debug(
+      d.libParams.logger.debug(
         `States after state correction`,
         await d.services.userStateService.getUserStates()
       );
@@ -47,7 +47,7 @@ export async function correctEmptyStateInputState(d: ConstructedServiceParams) {
 
 export async function goBackProcessor(d: ConstructedServiceParams) {
   if (d.botConfig.environment === 'development') {
-    d.frameworkLogger.debug(
+    d.libParams.logger.debug(
       `States before goBack`,
       await d.services.userStateService.getUserStates()
     );
@@ -73,7 +73,6 @@ export async function goBackProcessor(d: ConstructedServiceParams) {
   method(
     await constructParams({
       bot: d.bot,
-      frameworkLogger: d.frameworkLogger,
       routeName: activePrev,
       botConfig: d.botConfig,
       libParams: d.libParams,
@@ -97,7 +96,7 @@ export async function goBackProcessor(d: ConstructedServiceParams) {
   }
 
   if (d.botConfig.environment === 'development') {
-    d.frameworkLogger.debug(
+    d.libParams.logger.debug(
       `States after goBack`,
       await d.services.userStateService.getUserStates()
     );

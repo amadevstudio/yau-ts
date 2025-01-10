@@ -8,11 +8,7 @@ function decodeCallbackData(call: TeleCallback): ButtonData {
   }
 
   try {
-    const callbackData = JSON.parse(call.data);
-
-    return {
-      ...callbackData,
-    };
+    return JSON.parse(call.data);
   } catch (e) {
     return {};
   }

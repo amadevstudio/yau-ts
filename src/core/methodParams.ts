@@ -15,7 +15,6 @@ import {
   makeOuterSender,
 } from '@framework/controller/render';
 import { initializeI18n } from '@framework/i18n/setup';
-import { FrameworkLogger } from '@framework/toolbox/logger';
 import makeUserStateService, {
   type UserStateService,
 } from '@framework/service/userStateService';
@@ -80,13 +79,11 @@ function buildMutualParams({
 // Service params
 export function constructServiceParams({
   bot,
-  frameworkLogger,
   botConfig,
   libParams,
   storage,
 }: {
   bot: TeleBot;
-  frameworkLogger: FrameworkLogger;
   botConfig: BotConfig;
   libParams: LibParams;
   storage: StorageRepository;
@@ -94,7 +91,6 @@ export function constructServiceParams({
   return {
     // Service params
     bot,
-    frameworkLogger,
     botConfig,
     libParams,
     storage,
@@ -110,7 +106,6 @@ export async function constructParams<
   ActionNames extends string
 >({
   bot,
-  frameworkLogger,
   routeName,
   actionName,
   botConfig,
@@ -119,7 +114,6 @@ export async function constructParams<
   isStepBack = false,
 }: {
   bot: TeleBot;
-  frameworkLogger: FrameworkLogger;
   routeName: RouteNames;
   // routeParams: TRoute,
   actionName?: ActionNames;
@@ -152,7 +146,7 @@ export async function constructParams<
   const languageCode = (message.from?.language_code ||
     callback?.from.language_code)!;
 
-  const i18n = initializeI18n(botConfig.i18n, frameworkLogger, languageCode);
+  const i18n = initializeI18n(botConfig.i18n, libParams.logger, languageCode);
 
   return {
     ...mutualParams,
@@ -167,7 +161,7 @@ export async function constructParams<
     actionName,
     stateBeforeInteraction: currentState,
 
-    unitedData: getUnitedData(
+    unitedData: await getUnitedData(
       callback,
       mutualParams.services.userStateService,
       routeName,

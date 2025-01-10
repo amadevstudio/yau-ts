@@ -7,7 +7,7 @@ export function buildInlineMarkupButton<
   type: AvailableRoutes | AvailableActions,
   text: string,
   data?: Record<string, unknown>
-): MarkupButton<AvailableRoutes> {
+): MarkupButton<AvailableRoutes, AvailableActions> {
   if (data === undefined) {
     data = {};
   }

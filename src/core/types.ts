@@ -26,6 +26,7 @@ export type LibParams = (
 ) & {
   isCommand?: boolean;
   metadata?: TeleMeta;
+  logger: FrameworkLogger;
 };
 
 export type RenderCurried = (
@@ -100,7 +101,7 @@ export type ConstructedParams<
       type: AvailableRoutes | AvailableActions,
       text: string,
       data?: Record<string, unknown>
-    ) => MarkupButton<AvailableRoutes>;
+    ) => MarkupButton<AvailableRoutes, AvailableActions>;
   };
 
   i18n: I18n;
@@ -169,7 +170,6 @@ export type BotConfig<
 
 export type ConstructedServiceParams = MutualConstructedParams & {
   bot: TeleBot;
-  frameworkLogger: FrameworkLogger;
   botConfig: BotConfig;
   libParams: LibParams;
   routes: Routes;

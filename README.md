@@ -1,13 +1,62 @@
-# yau
+# yau-ts
 
-Alpha version, can render messages and use state, see the demo below
+## Why
+
+The current implemented functionality already has the ability to render and a state system.
+
+For example, imagine that you have a message sent to a user. You want to delete it and send two more. After 5 seconds, you want to delete these two and send new ones.
+
+In telethon, aiogram, or node-telegram-bot-api, you need to write something like this:
+
+```code
+deleteMessage(id?)
+
+id1 = sendMessage(type: "text", text: ..., markup: ..., )
+id2 = sendMessage(type: "text", text: ...)
+
+sleep(5)
+
+// And you should save ids if it's a different handler.
+deleteMessage(id1)
+deleteMessage(id2)
+
+sendMessage(type: text "", text: ...)
+sendMessage(type: text "", text: ...)
+```
+
+The idea of the project is simple rendering, the previous state is processed automatically.:
+
+```ts
+d.render([
+  {type: 'text', text: ..., markup: {}},
+  {type: 'text', text: ...}])
+sleep(5)
+d.render([
+  {type: 'text', text: ...},
+  {type: 'text', text: ...}])
+```
+
+You don't need to know the details of the state or the telegram. You just need to declare the routes and call the render.
+
+### Planned features
+
+- automate media caching;
+- menus, pagination;
+- ability to send big files;
+- and many more.
+
+## Alpha version
+
+Can render messages and use state, see the demo below
+
+## Requirements
 
 Using asdf plugin manager
 `asdf install nodejs`
 
 You must have Redis to keep user state
 
-Simple demo example:
+## Simple demo example
 
 - packages.json
 
@@ -139,12 +188,16 @@ export const routes: Routes<AvailableRoutes> = buildRoutes(localRoutes);
 export type AvailableActions = LocalActionNames;
 ```
 
-- start.ts
+- entry.ts
 
 ```ts
 import type { MessageStructure } from "yau/src/controller/types";
 import type { ConstructedParams } from "yau/src/core/types";
 import { localRouteNameMap } from "../routes";
+
+type MenuData = {
+  someData?: string;
+};
 
 export async function start(d: ConstructedParams) {
   const messages: MessageStructure[] = [
@@ -152,7 +205,11 @@ export async function start(d: ConstructedParams) {
       type: "text",
       text: d.i18n.t(["start", "s", "message"]),
       inlineMarkup: [
-        [d.components.buildButton(localRouteNameMap.menu, "Open menu")],
+        [
+          d.components.buildButton(localRouteNameMap.menu, "Open menu", {
+            someData: "Some data",
+          } as MenuData),
+        ],
         [
           d.components.buildButton(
             localRouteNameMap.deepMethod,
@@ -161,16 +218,18 @@ export async function start(d: ConstructedParams) {
         ],
       ],
     },
-  ];
+  ] as const;
 
-  d.render(messages, { resending: d.isCommand });
+  return d.render(messages, { resending: d.isCommand });
 }
 
 export async function menu(d: ConstructedParams) {
+  const data = d.unitedData as MenuData;
+
   const messages: MessageStructure[] = [
     {
       type: "text",
-      text: "Hello there",
+      text: data.someData ? "Hello there with " + data.someData : "Hello there",
       inlineMarkup: [
         [d.components.buildButton(localRouteNameMap.deepMethod, "Deeper")],
       ],
@@ -180,8 +239,8 @@ export async function menu(d: ConstructedParams) {
       text: "And there",
       inlineMarkup: d.components.goBack.buildLayout(),
     },
-  ];
-  d.render(messages, { resending: d.isCommand });
+  ] as const;
+  return d.render(messages, { resending: d.isCommand });
 }
 
 export async function deepMethod(d: ConstructedParams) {
@@ -191,7 +250,7 @@ export async function deepMethod(d: ConstructedParams) {
       text: "Just goBack state",
       inlineMarkup: d.components.goBack.buildLayout(),
     },
-  ];
-  d.render(messages);
+  ] as const;
+  return d.render(messages);
 }
 ```
