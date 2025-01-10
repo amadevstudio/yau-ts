@@ -1,5 +1,9 @@
 # yau-ts
 
+## Links
+
+- Python version https://github.com/amadevstudio/yau-python
+
 ## Why
 
 The current implemented functionality already has the ability to render and a state system.
