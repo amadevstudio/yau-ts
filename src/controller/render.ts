@@ -68,7 +68,10 @@ async function render(
   // TODO: catch telegram api exceptions and react: remove user of bot blocked or timeout
 }
 
-export function makeOuterSender(bot: TeleBot, userStateService: UserStateService) {
+export function makeOuterSender(
+  bot: TeleBot,
+  userStateService: UserStateService
+) {
   return async (
     chatId: number,
     messages: MessageStructure[]
@@ -159,7 +162,7 @@ async function messageMaster(
   // Delete unwanted
   for (const message of messagesToDelete) {
     try {
-      await bot.deleteMessage(chatId, message.id);
+      await bot.api.deleteMessage(chatId, message.id);
     } catch (error) {
       messagesToEdit = {};
       messagesToSend = messageStructures;
@@ -173,11 +176,9 @@ async function messageMaster(
     let resultMessage: boolean | TeleMessage;
 
     if (message.type === 'text') {
-      resultMessage = await bot.editMessageText(message.text, {
-        chat_id: chatId,
-        message_id: id,
+      resultMessage = await bot.api.editMessageText(chatId, id, message.text, {
         parse_mode: message.parseMode,
-        disable_web_page_preview: message.disableWebPagePreview,
+        link_preview_options: { is_disabled: message.disableWebPagePreview },
         reply_markup: prepareMarkup(message),
       });
 
@@ -198,9 +199,9 @@ async function messageMaster(
     let resultMessage;
 
     if (message.type === 'text') {
-      resultMessage = await bot.sendMessage(chatId, message.text, {
+      resultMessage = await bot.api.sendMessage(chatId, message.text, {
         parse_mode: message.parseMode,
-        disable_web_page_preview: message.disableWebPagePreview,
+        link_preview_options: { is_disabled: message.disableWebPagePreview },
         reply_markup: prepareMarkup(message),
       });
 

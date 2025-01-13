@@ -3,6 +3,7 @@ import {
   ConstructedParams,
   ConstructedServiceParams,
   LibParams,
+  MutualConstructedParams,
 } from '@framework/core/types';
 import {
   TeleBot,
@@ -15,34 +16,26 @@ import {
   makeOuterSender,
 } from '@framework/controller/render';
 import { initializeI18n } from '@framework/i18n/setup';
-import makeUserStateService, {
-  type UserStateService,
-} from '@framework/service/userStateService';
 import { StorageRepository } from '@framework/repository/storage';
 import { getUnitedData } from '@framework/service/stateDataService';
 import { goBackProcessor } from '@framework/controller/controllers';
 import makeGoBack from '@framework/components/goBack';
 import { buildInlineMarkupButton } from '@framework/components/button';
+import makeUserStateService from '@framework/service/userStateService';
 
 // Dig message and callback
 function separateMessageAndCallback(libParams: LibParams): {
   message: TeleMessage;
   callback: TeleCallback | undefined;
 } {
-  if ('message' in libParams && libParams.message !== undefined) {
-    return { message: libParams.message, callback: undefined };
+  if (libParams.ctx.callbackQuery === undefined) {
+    return { message: libParams.ctx.message!, callback: undefined };
   }
 
   return {
-    message: libParams.callback!.message!,
-    callback: libParams.callback,
+    message: libParams.ctx.callbackQuery.message!,
+    callback: libParams.ctx.callbackQuery,
   };
-}
-
-export function getChatId(libParams: LibParams) {
-  const { message } = separateMessageAndCallback(libParams);
-
-  return message.chat.id;
 }
 
 // Mutual for service and common routes
@@ -52,15 +45,15 @@ function buildMutualParams({
 }: {
   libParams: LibParams;
   storage: StorageRepository;
-}) {
+}): MutualConstructedParams {
   const { message, callback } = separateMessageAndCallback(libParams);
 
-  const chatId = message.chat.id;
+  const chatId = libParams.ctx.chatId!;
 
-  const languageCode = (message.from?.language_code ||
+  const languageCode = (message?.from?.language_code ||
     callback?.from.language_code)!;
 
-  const services: { userStateService: UserStateService } = {
+  const services = {
     userStateService: makeUserStateService(storage, chatId),
   };
 
@@ -146,7 +139,11 @@ export async function constructParams<
   const languageCode = (message.from?.language_code ||
     callback?.from.language_code)!;
 
-  const i18n = initializeI18n(botConfig.i18n, libParams.logger, languageCode);
+  const i18n = initializeI18n(
+    botConfig.i18n,
+    libParams.ctx.$frameworkLogger,
+    languageCode
+  );
 
   return {
     ...mutualParams,

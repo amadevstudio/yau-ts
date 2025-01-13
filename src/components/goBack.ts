@@ -2,7 +2,7 @@ import { defaultActionNamesMap } from '@framework/controller/defaultRoutes';
 import { I18n } from '../i18n/setup';
 import { buildInlineMarkupButton } from './button';
 
-const goBackType = defaultActionNamesMap.$back;
+export const goBackType = defaultActionNamesMap.$back;
 
 export default function makeGoBack({
   defaultTextKey,

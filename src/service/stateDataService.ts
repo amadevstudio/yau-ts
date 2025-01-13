@@ -1,6 +1,7 @@
 import { ButtonData, TeleCallback } from '@framework/controller/types';
 import { UserStateService } from './userStateService';
 import { DefaultActionNames } from '@framework/controller/defaultRoutes';
+import { typeFieldName } from '@framework/core/types';
 
 function decodeCallbackData(call: TeleCallback): ButtonData {
   if (call.data === undefined) {
@@ -38,13 +39,13 @@ function getCallbackData<
   // If not action (route change, back, validations)
   if (action === undefined) {
     // Then only stateData for the same route should be taken into account
-    if (callbackData.$tp != route) {
+    if (callbackData[typeFieldName] != route) {
       callbackData = {};
     }
   }
   // If action, mix with state (below) removing 'tp'
   else {
-    delete callbackData.$tp;
+    delete callbackData[typeFieldName];
   }
   return callbackData;
 }
@@ -77,5 +78,5 @@ export async function getUnitedData<
 export function getCallbackType<AvailableActions extends DefaultActionNames>(
   callback: TeleCallback
 ): AvailableActions {
-  return decodeCallbackData(callback).$tp as AvailableActions;
+  return decodeCallbackData(callback)[typeFieldName] as AvailableActions;
 }

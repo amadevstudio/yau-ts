@@ -1,16 +1,17 @@
-import TelegramBot from 'node-telegram-bot-api';
+import { Bot } from 'grammy';
 import {
+  actionFieldName,
   BotConfig,
   ConstructedServiceParams,
   LibParams,
   Route,
+  typeFieldName,
 } from '@framework/core/types';
-import { TeleBot, TeleCallback } from '@framework/controller/types';
+import { TeleBot, TeleContext } from '@framework/controller/types';
 import {
   constructParams,
   constructServiceParams,
 } from '@framework/core/methodParams';
-import initializeLogger from '@framework/toolbox/logger';
 import initStorage, { StorageRepository } from '@framework/repository/storage';
 import {
   correctEmptyStateInputState,
@@ -18,12 +19,13 @@ import {
 } from '@framework/controller/controllers';
 import {
   initializeValidateAction,
-  initializeValidateCallback,
-  initializeValidateCommands,
   initializeValidateMessages,
   validateGoBack,
 } from './validators';
 import { makeUsersStateService } from '@framework/service/userStateService';
+import { serviceMiddlewares } from './middlewares';
+import { goBackType } from '@framework/components/goBack';
+import { escapeSpecialCharacters } from '@framework/toolbox/regex';
 
 // Curry service controllers
 function makeServiceProcessQuery(
@@ -54,16 +56,25 @@ function serviceControllers(
   bot: TeleBot,
   serviceProcessQuery: ReturnType<typeof makeServiceProcessQuery>
 ) {
-  // GoBack module
-  bot.on('callback_query', (callback: TeleCallback) => {
-    if (validateGoBack(callback))
-      serviceProcessQuery(goBackProcessor, {
-        callback,
-        logger: initializeLogger(),
-      });
-  });
-
   // TODO: Catch all message when under maintenance and show maintenance message and return false
+
+  // GoBack module
+  bot.callbackQuery(
+    // "$tp":"$back" hits {"$tp":"$back",...}
+    new RegExp(
+      `"${escapeSpecialCharacters(typeFieldName)}":"${escapeSpecialCharacters(
+        goBackType
+      )}"`
+    ),
+    async (ctx) => {
+      if (validateGoBack(ctx.callbackQuery))
+        serviceProcessQuery(goBackProcessor, {
+          ctx: ctx as TeleContext,
+        });
+      await ctx.answerCallbackQuery();
+    }
+  );
+
   return true;
 }
 
@@ -90,13 +101,6 @@ function makeProcessQuery(
       libParams,
       storage,
     });
-
-    if (botConfig.environment === 'development') {
-      libParams.logger.debug(
-        'States before interaction:',
-        await cp.services.userStateService.getUserStates()
-      );
-    }
 
     // If step forward, delete state data
     if (cp.isStepForward && cp.routeName !== undefined) {
@@ -133,15 +137,8 @@ function makeProcessQuery(
     if (changeState !== false) {
       await cp.services.userStateService.addUserState(cp.routeName);
       if (botConfig.environment === 'development') {
-        libParams.logger.debug('Changing state to', cp.routeName);
+        libParams.ctx.$frameworkLogger.debug('Changing state to', cp.routeName);
       }
-    }
-
-    if (botConfig.environment === 'development') {
-      libParams.logger.debug(
-        'States after interaction:',
-        await cp.services.userStateService.getUserStates()
-      );
     }
   };
 }
@@ -185,6 +182,8 @@ async function initializeRoutes({
   botConfig: BotConfig;
   storage: StorageRepository;
 }) {
+  serviceMiddlewares(bot, storage, botConfig);
+
   const serviceProcessQuery = makeServiceProcessQuery(bot, botConfig, storage);
   const shouldProcess = serviceControllers(bot, serviceProcessQuery);
   // Block processing on bot init
@@ -213,23 +212,15 @@ async function initializeRoutes({
 
     // Command section
     if (routeParams.availableFrom.includes('command')) {
-      const validateCommands = initializeValidateCommands(
-        routeParams.commands ?? [routeName]
-      );
+      const commands = routeParams.commands ?? [routeName];
 
-      bot.on('message', async (message, metadata) => {
-        // Validate, if config have the route
-        if (
-          message.text !== undefined &&
-          validateCommands(message.text.substring(1))
-        ) {
+      commands.forEach((command) => {
+        bot.command(command, async (ctx) => {
           await processQuery({
-            message,
-            metadata,
+            ctx,
             isCommand: true,
-            logger: initializeLogger(),
-          });
-        }
+          } as LibParams);
+        });
       });
     }
 
@@ -240,33 +231,35 @@ async function initializeRoutes({
         usersStateService
       );
 
-      bot.on('message', async (message, metadata) => {
-        if (message !== undefined && (await validateMessage(message))) {
+      bot.on(':text', async (ctx) => {
+        if (ctx.message !== undefined && (await validateMessage(ctx.message))) {
           // If status is 'empty' and previous waits for text, "goBack" to previously and process
-
           await serviceProcessQuery(correctEmptyStateInputState, {
-            message,
-            metadata,
-            logger: initializeLogger(),
-          });
+            ctx,
+          } as LibParams);
 
-          await processQuery({ message, metadata, logger: initializeLogger() });
+          await processQuery({ ctx } as LibParams);
         }
       });
     }
 
-    // Callback section
+    // Callback section (state changing)
     if (routeParams.availableFrom.includes('callback')) {
-      const validateCallback = initializeValidateCallback(routeName);
-
-      bot.on('callback_query', async (callback) => {
-        if (validateCallback(callback)) {
-          await processQuery({ callback, logger: initializeLogger() });
+      // Validate "$tp":"$state_name"
+      bot.callbackQuery(
+        new RegExp(
+          `"${escapeSpecialCharacters(
+            typeFieldName
+          )}":"${escapeSpecialCharacters(routeName)}"`
+        ),
+        async (ctx) => {
+          await processQuery({ ctx } as LibParams);
+          await ctx.answerCallbackQuery();
         }
-      });
+      );
     }
 
-    // Actions section
+    // Actions section (in-state actions)
     if (routeParams.actions) {
       for (const actionName in routeParams.actions) {
         const processAction = makeProcessAction(
@@ -284,11 +277,20 @@ async function initializeRoutes({
           usersStateService
         );
 
-        bot.on('callback_query', async (callback) => {
-          if (await validateAction(callback)) {
-            await processAction({ callback, logger: initializeLogger() });
+        bot.callbackQuery(
+          // Validate "$act":"$action_name"
+          new RegExp(
+            `"${escapeSpecialCharacters(
+              actionFieldName
+            )}":"${escapeSpecialCharacters(actionName)}"`
+          ),
+          async (ctx) => {
+            if (await validateAction(ctx.callbackQuery)) {
+              await processAction({ ctx } as LibParams);
+            }
+            await ctx.answerCallbackQuery();
           }
-        });
+        );
       }
     }
   }
@@ -306,9 +308,12 @@ export default async function initializeBot(
     ...botConfig,
   };
 
-  const bot: TeleBot = new TelegramBot(token, {
-    polling: true,
-    testEnvironment: augmentedBotConfig.testTelegram,
+  // TODO: implement Webhooks mode: https://grammy.dev/guide/deployment-types with bun adapter
+
+  const bot: TeleBot = new Bot(token, {
+    client: {
+      ...(augmentedBotConfig.testTelegram ? { environment: 'test' } : {}),
+    },
   });
 
   const storage = await initStorage(storageUrl);

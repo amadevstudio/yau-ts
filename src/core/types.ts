@@ -1,32 +1,22 @@
 import {
-  TeleCallback,
-  TeleMessage,
-  TeleMeta,
   MessageStructure,
   ResultMessageStructure,
   TeleBot,
   MarkupButton,
+  TeleContext,
 } from '@framework/controller/types';
 import { InitializeI18n, I18n } from '@framework/i18n/setup';
 import { UserStateService } from '@framework/service/userStateService';
 import { defaultRoutes } from '../controller/defaultRoutes';
-import { FrameworkLogger } from '@framework/toolbox/logger';
 import { StorageRepository } from '@framework/repository/storage';
 import { goBackProcessor } from '@framework/controller/controllers';
 
-export type LibParams = (
-  | {
-      message: TeleMessage;
-      callback?: TeleCallback;
-    }
-  | {
-      message?: TeleMessage;
-      callback: TeleCallback;
-    }
-) & {
+export const typeFieldName = '$tp';
+export const actionFieldName = '$act';
+
+export type LibParams = {
+  ctx: TeleContext;
   isCommand?: boolean;
-  metadata?: TeleMeta;
-  logger: FrameworkLogger;
 };
 
 export type RenderCurried = (
@@ -53,7 +43,7 @@ export type Message = {
   };
 };
 
-type MutualConstructedParams = {
+export type MutualConstructedParams = {
   chat: {
     id: number;
   };
@@ -119,7 +109,6 @@ export type Route<
   routes?: AvailableRoutes[];
   waitsForInput?: boolean;
   statesForInput?: AvailableRoutes[]; // States for message input (for example, its own name)
-  // TODO: implement below:
   actions?: Record<
     string,
     {

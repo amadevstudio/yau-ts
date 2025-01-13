@@ -1,9 +1,13 @@
-import TelegramBot, { InlineKeyboardButton } from 'node-telegram-bot-api';
+import { FrameworkLogger } from '@framework/toolbox/logger';
+import { Bot, Context, NextFunction } from 'grammy';
+import { CallbackQuery, InlineKeyboardButton, Message } from 'grammy/types';
 
-export class TeleBot extends TelegramBot {}
-export type TeleMessage = TelegramBot.Message;
-export type TeleCallback = TelegramBot.CallbackQuery;
-export type TeleMeta = TelegramBot.Metadata;
+export class TeleBot extends Bot {}
+export type TeleContextBare = Context;
+export type TeleContext = TeleContextBare & { $frameworkLogger: FrameworkLogger };
+export type NextF = NextFunction;
+export type TeleMessage = Message;
+export type TeleCallback = CallbackQuery;
 export type TeleInlineKeyboardButton = InlineKeyboardButton;
 
 type MessageTypes = 'text'; // TODO: 'image' | 'audio' ...
