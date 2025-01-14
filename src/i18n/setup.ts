@@ -183,6 +183,7 @@ export function initializeI18n(
 ): I18n {
   return {
     t: i18n === undefined ? fallbackT : i18n.t(frameworkLogger, languageCode),
+    languageCode: languageCode,
   };
 }
 
@@ -195,4 +196,5 @@ export type InitializeI18n = {
 
 export type I18n = {
   t: (id: string[], params?: { num?: number; vars?: string[] }) => string;
+  languageCode: string;
 };

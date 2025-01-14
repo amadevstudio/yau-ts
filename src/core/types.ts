@@ -143,14 +143,15 @@ export type Routes<
 
 export type BotConfig<
   AvailableRoutes extends string = string,
-  AvailableActions extends string = string
+  AvailableActions extends string = string,
+  AvailableLanguages extends string = string
 > = {
   routes: Routes<AvailableRoutes, AvailableActions>;
   defaultRoute: AvailableRoutes;
 
   i18n?: InitializeI18n;
-  defaultTextKeys: {
-    goBack: string[];
+  defaultTextGetters: {
+    goBack: (languageCode: AvailableLanguages) => string;
   };
 
   testTelegram?: boolean;

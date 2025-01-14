@@ -181,7 +181,7 @@ export async function constructParams<
 
     components: {
       goBack: makeGoBack({
-        defaultTextKey: botConfig?.defaultTextKeys?.goBack,
+        getDefaultText: botConfig?.defaultTextGetters?.goBack,
         i18n,
       }),
 
