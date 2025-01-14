@@ -1,8 +1,8 @@
 # yau-ts
 
-## Why
+Built on top of [grammY](https://github.com/grammyjs/grammY)
 
-The current implemented functionality already has the ability to render and a state system.
+## Why
 
 For example, imagine that you have a message sent to a user. You want to delete it and send two more. After 5 seconds, you want to delete these two and send new ones.
 
@@ -47,7 +47,8 @@ You don't need to know the details of the state or the telegram. You just need t
 
 ## Alpha version
 
-Can render messages and use state, see the demo below
+- Can render messages and use state, see the demo below
+- Has i18n built-in functionality
 
 ## Requirements
 
@@ -58,12 +59,16 @@ You must have Redis to keep user state
 
 ## Simple demo example
 
+Just use render to show your state, as well as other useful functions! The example shows the setup, i18n and how render method works.
+
 - packages.json
 
 ```json
+...
 "dependencies": {
   "yau": "git+https://github.com/amadevstudio/yau"
 }
+...
 ```
 
 - main.ts
@@ -80,26 +85,37 @@ import {
 } from "./controller/routes";
 import setupI18n from "yau/src/i18n/setup";
 
-import configureI18n from "./public/i18n";
+import configureI18n, {
+  navigation,
+  type AvailableLanguages,
+} from "./public/i18n";
+
+const fallbackLanguageCode = "en";
 
 const i18n = setupI18n(configureI18n({ appName: ENV.APP_NAME }), {
-  fallbackLanguageCode: "ru",
+  fallbackLanguageCode: fallbackLanguageCode,
 });
 
-const botConfig: BotConfig<AvailableRoutes, AvailableActions> = {
+const botConfig: BotConfig<
+  AvailableRoutes,
+  AvailableActions,
+  AvailableLanguages
+> = {
   routes,
   defaultRoute: "start",
 
   i18n,
-  defaultTextKeys: {
-    goBack: ["navigation", "s", "goBack"],
+  defaultTextGetters: {
+    goBack: (languageCode: AvailableLanguages) =>
+      navigation.s.goBack[languageCode] ??
+      navigation.s.goBack[fallbackLanguageCode],
   },
 
   testTelegram: ENV.TEST_TELEGRAM === "true",
   environment: ENV.ENVIRONMENT,
 };
 
-initializeBot(ENV.BOT_TOKEN, ENV.REDIS_URL, botConfig);
+(await initializeBot(ENV.BOT_TOKEN, ENV.REDIS_URL, botConfig)).start();
 ```
 
 - i18n.ts
@@ -107,9 +123,9 @@ initializeBot(ENV.BOT_TOKEN, ENV.REDIS_URL, botConfig);
 ```ts
 import type { Dictionary } from "yau/src/i18n/setup";
 
-type AvailableLanguages = "ru";
+export type AvailableLanguages = "ru" | "en";
 
-const navigation = {
+export const navigation = {
   s: {
     goBack: {
       en: "<< Go back",
@@ -122,7 +138,7 @@ function makeStart(appName: string) {
   return {
     s: {
       message: {
-        // en: `Welcome to ${appName}! This is the /start answer`,
+        en: `Welcome to ${appName}! This is the /start answer`,
         ru: `Добро пожаловать в ${appName}`,
       },
     },
@@ -140,7 +156,6 @@ export default function configureI18n({
     start: makeStart(appName),
   };
 }
-
 ```
 
 - routes.ts
@@ -220,7 +235,7 @@ export async function start(d: ConstructedParams) {
     },
   ] as const;
 
-  return d.render(messages, { resending: d.isCommand });
+  await d.render(messages, { resending: d.isCommand });
 }
 
 export async function menu(d: ConstructedParams) {
@@ -240,7 +255,7 @@ export async function menu(d: ConstructedParams) {
       inlineMarkup: d.components.goBack.buildLayout(),
     },
   ] as const;
-  return d.render(messages, { resending: d.isCommand });
+  await d.render(messages, { resending: d.isCommand });
 }
 
 export async function deepMethod(d: ConstructedParams) {
@@ -251,6 +266,6 @@ export async function deepMethod(d: ConstructedParams) {
       inlineMarkup: d.components.goBack.buildLayout(),
     },
   ] as const;
-  return d.render(messages);
+  await d.render(messages);
 }
 ```
