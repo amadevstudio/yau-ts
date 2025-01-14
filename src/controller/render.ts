@@ -8,15 +8,19 @@ import {
 import { RenderCurried, RenderToChatCurried } from '@framework/core/types';
 import { UserStateService } from '@framework/service/userStateService';
 
-type RenderParams = { resending: boolean };
+type RenderParams = { resending?: boolean };
 
 export function makeRender(
   bot: TeleBot,
   userStateService: UserStateService,
-  chatId: number
+  chatId: number,
+  isCommand: boolean
 ): RenderCurried {
   return async (messages: MessageStructure[], params?: RenderParams) => {
-    return render(bot, userStateService, chatId, messages, params);
+    return render(bot, userStateService, chatId, messages, {
+      resending: isCommand,
+      ...params,
+    });
   };
 }
 

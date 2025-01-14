@@ -145,6 +145,8 @@ export async function constructParams<
     languageCode
   );
 
+  const isCommand = libParams.isCommand ?? false;
+
   return {
     ...mutualParams,
 
@@ -165,16 +167,17 @@ export async function constructParams<
       actionName
     ),
 
-    isStepForward: isStepForward,
-    isStepBack: isStepBack,
-    isCommand: libParams.isCommand ?? false,
+    isStepForward,
+    isStepBack,
+    isCommand,
 
     goBackAction: goBackProcessor,
 
     render: makeRender(
       bot,
       mutualParams.services.userStateService,
-      mutualParams.chat.id
+      mutualParams.chat.id,
+      isCommand
     ),
     renderToChat: makeRenderToChat(bot, mutualParams.services.userStateService),
     outerSender: makeOuterSender(bot, mutualParams.services.userStateService),
