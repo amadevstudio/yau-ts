@@ -36,9 +36,7 @@ class CustomLogger {
 
 export type FrameworkLogger = CustomLogger;
 
-export default function initializeLogger(randomId?: number): FrameworkLogger {
-  // TODO: generate uuid for each query
-  // const randomId = generateRandomId();
-  // const randomId = '';
+export default function initializeLogger(): FrameworkLogger {
+  const randomId = generateRandomId();
   return new CustomLogger(randomId ?? "");
 }
