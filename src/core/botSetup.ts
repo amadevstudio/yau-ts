@@ -111,7 +111,12 @@ function makeProcessQuery(
       // Clear state on commands and set parent state as default route
       if (cp.isCommand) {
         await cp.services.userStateService.clearUserStorage();
-        await cp.services.userStateService.addUserState(botConfig.defaultRoute);
+        // But if start, ignore (can't go back from start)
+        if (cp.routeName !== 'start') {
+          await cp.services.userStateService.addUserState(
+            botConfig.defaultRoute
+          );
+        }
       }
       // Set resend on message
       await cp.services.userStateService.setUserResendFlag();
