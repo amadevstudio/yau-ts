@@ -41,7 +41,7 @@ export function makeUsersStateService<AvailableRoutes extends string = string>(
         -1
       ) as Promise<AvailableRoutes | null>;
     },
-  };
+  } as const;
 }
 
 export default function makeUserStateService<
@@ -186,7 +186,7 @@ export default function makeUserStateService<
         JSON.stringify(messageStructures)
       );
     },
-  };
+  } as const;
 }
 
 export type UsersStateService = ReturnType<typeof makeUsersStateService>;
