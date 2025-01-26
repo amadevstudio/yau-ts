@@ -3,27 +3,22 @@ import {
   TeleContext,
   NextF,
   TeleContextBare,
+  LibraryHttpError,
 } from '@framework/controller/types';
 import { StorageRepository } from '@framework/repository/storage';
 import makeUserStateService from '@framework/service/userStateService';
 import initializeLogger from '@framework/toolbox/logger';
 import { BotConfig, CustomMiddleware } from './types';
 import { buildMiddlewareParams } from './methodParams';
-
-// Inject Logger
-// Dev state logger
+import { LibraryError } from '../controller/types';
 
 export function setupServiceMiddlewares(
   bot: TeleBot,
   storage: StorageRepository,
   botConfig: BotConfig
 ) {
-  async function injectLogger(
-    ctx: TeleContext,
-    next: NextF // аналог для: () => Promise<void>
-  ): Promise<void> {
+  async function injectLogger(ctx: TeleContext, next: NextF): Promise<void> {
     ctx.$frameworkLogger = initializeLogger();
-
     await next();
   }
 
@@ -66,11 +61,36 @@ export function setupCustomMiddlewares(
       ctx: TeleContext,
       next: NextF
     ): Promise<void> {
-      middleware(buildMiddlewareParams(ctx), next);
+      try {
+        await middleware(buildMiddlewareParams(ctx), next);
+      } catch (err) {
+        ctx.$frameworkLogger.error(
+          `Error in custom middleware: ${middleware}:`,
+          err
+        );
+        throw err; // Rethrow to propagate to the global error handler
+      }
     }
 
     bot.use(
       processMiddleware as (ctx: TeleContextBare, next: NextF) => Promise<void>
     );
   }
+}
+
+export function catchMiddlewaresError(bot: TeleBot) {
+  bot.catch((err) => {
+    const ctx = err.ctx as TeleContext;
+    ctx.$frameworkLogger.error(
+      `Error while handling update ${ctx.update.update_id}:`
+    );
+    const e = err.error;
+    if (e instanceof LibraryError) {
+      ctx.$frameworkLogger.error('Error in request:', e.description);
+    } else if (e instanceof LibraryHttpError) {
+      ctx.$frameworkLogger.error('Could not contact Telegram:', e);
+    } else {
+      ctx.$frameworkLogger.error('Unknown error:', e);
+    }
+  });
 }

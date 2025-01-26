@@ -1,11 +1,15 @@
 import { FrameworkLogger } from '@framework/toolbox/logger';
-import { Bot, Context, NextFunction } from 'grammy';
+import { Bot, Context, GrammyError, HttpError, NextFunction } from 'grammy';
 import { CallbackQuery, InlineKeyboardButton, Message } from 'grammy/types';
 
 export class TeleBot extends Bot {}
 export type TeleContextBare = Context;
-export type TeleContext = TeleContextBare & { $frameworkLogger: FrameworkLogger };
+export type TeleContext = TeleContextBare & {
+  $frameworkLogger: FrameworkLogger;
+};
 export type NextF = NextFunction;
+export const LibraryError = GrammyError;
+export const LibraryHttpError = HttpError;
 export type TeleMessage = Message;
 export type TeleCallback = CallbackQuery;
 export type TeleInlineKeyboardButton = InlineKeyboardButton;

@@ -23,7 +23,11 @@ import {
   validateGoBack,
 } from './validators';
 import { makeUsersStateService } from '@framework/service/userStateService';
-import { setupCustomMiddlewares, setupServiceMiddlewares } from './middlewares';
+import {
+  catchMiddlewaresError,
+  setupCustomMiddlewares,
+  setupServiceMiddlewares,
+} from './middlewares';
 import { goBackType } from '@framework/components/goBack';
 import { escapeSpecialCharacters } from '@framework/toolbox/regex';
 
@@ -194,11 +198,14 @@ async function initializeRoutes({
     return;
   }
 
+  // Service middlewares
   setupServiceMiddlewares(bot, storage, botConfig);
+  // Custom middlewares
+  setupCustomMiddlewares(bot, botConfig.middlewares ?? []);
+  // Catch middleware errors
+  catchMiddlewaresError(bot);
 
   const serviceProcessQuery = makeServiceProcessQuery(bot, botConfig, storage);
-  setupCustomMiddlewares(bot, botConfig.middlewares ?? []);
-
   serviceControllers(bot, serviceProcessQuery);
 
   type AvailableRoutes = keyof typeof botConfig.routes;
