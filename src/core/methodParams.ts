@@ -1,13 +1,15 @@
 import {
   BotConfig,
-  ConstructedParams,
+  ControllerConstructedParams,
   ConstructedServiceParams,
   LibParams,
-  MutualConstructedParams,
+  MutualControllerConstructedParams,
+  MiddlewareConstructedParams,
 } from '@framework/core/types';
 import {
   TeleBot,
   TeleCallback,
+  TeleContext,
   TeleMessage,
 } from '@framework/controller/types';
 import {
@@ -45,7 +47,7 @@ function buildMutualParams({
 }: {
   libParams: LibParams;
   storage: StorageRepository;
-}): MutualConstructedParams {
+}): MutualControllerConstructedParams {
   const { message, callback } = separateMessageAndCallback(libParams);
 
   const chatId = libParams.ctx.chatId!;
@@ -114,7 +116,7 @@ export async function constructParams<
   libParams: LibParams;
   storage: StorageRepository;
   isStepBack?: boolean;
-}): Promise<ConstructedParams<RouteNames, ActionNames>> {
+}): Promise<ControllerConstructedParams<RouteNames, ActionNames>> {
   const { message, callback } = separateMessageAndCallback(libParams);
 
   const messageData = (msg: TeleMessage | undefined) => {
@@ -192,5 +194,18 @@ export async function constructParams<
     },
 
     i18n: i18n,
+  };
+}
+
+export function buildMiddlewareParams(
+  ctx: TeleContext
+): MiddlewareConstructedParams {
+  return {
+    chat: {
+      id: ctx.chat?.id,
+    },
+    user: {
+      languageCode: ctx.message?.from.language_code,
+    },
   };
 }

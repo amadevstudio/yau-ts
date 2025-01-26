@@ -23,7 +23,7 @@ import {
   validateGoBack,
 } from './validators';
 import { makeUsersStateService } from '@framework/service/userStateService';
-import { serviceMiddlewares } from './middlewares';
+import { setupCustomMiddlewares, setupServiceMiddlewares } from './middlewares';
 import { goBackType } from '@framework/components/goBack';
 import { escapeSpecialCharacters } from '@framework/toolbox/regex';
 
@@ -51,13 +51,16 @@ function makeServiceProcessQuery(
   };
 }
 
+function operable() {
+  // TODO: Catch all message when under maintenance and show maintenance message and return false
+  return true;
+}
+
 // Init service controllers
 function serviceControllers(
   bot: TeleBot,
   serviceProcessQuery: ReturnType<typeof makeServiceProcessQuery>
 ) {
-  // TODO: Catch all message when under maintenance and show maintenance message and return false
-
   // GoBack module
   bot.callbackQuery(
     // "$tp":"$back" hits {"$tp":"$back",...}
@@ -74,8 +77,6 @@ function serviceControllers(
       await ctx.answerCallbackQuery();
     }
   );
-
-  return true;
 }
 
 // Curry controllers
@@ -187,14 +188,18 @@ async function initializeRoutes({
   botConfig: BotConfig;
   storage: StorageRepository;
 }) {
-  serviceMiddlewares(bot, storage, botConfig);
-
-  const serviceProcessQuery = makeServiceProcessQuery(bot, botConfig, storage);
-  const shouldProcess = serviceControllers(bot, serviceProcessQuery);
+  const shouldProcess = operable();
   // Block processing on bot init
   if (!shouldProcess) {
     return;
   }
+
+  setupServiceMiddlewares(bot, storage, botConfig);
+
+  const serviceProcessQuery = makeServiceProcessQuery(bot, botConfig, storage);
+  setupCustomMiddlewares(bot, botConfig.middlewares ?? []);
+
+  serviceControllers(bot, serviceProcessQuery);
 
   type AvailableRoutes = keyof typeof botConfig.routes;
 

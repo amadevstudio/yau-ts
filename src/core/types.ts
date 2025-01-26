@@ -4,6 +4,7 @@ import {
   TeleBot,
   MarkupButton,
   TeleContext,
+  NextF,
 } from '@framework/controller/types';
 import { InitializeI18n, I18n } from '@framework/i18n/setup';
 import { UserStateService } from '@framework/service/userStateService';
@@ -43,7 +44,7 @@ export type Message = {
   };
 };
 
-export type MutualConstructedParams = {
+export type MutualControllerConstructedParams = {
   chat: {
     id: number;
   };
@@ -54,10 +55,10 @@ export type MutualConstructedParams = {
   services: { userStateService: UserStateService };
 };
 
-export type ConstructedParams<
+export type ControllerConstructedParams<
   AvailableRoutes extends string = string,
   AvailableActions extends string = string
-> = MutualConstructedParams & {
+> = MutualControllerConstructedParams & {
   message?: Message;
   callback?: {
     message?: Message;
@@ -97,12 +98,21 @@ export type ConstructedParams<
   i18n: I18n;
 };
 
+export type MiddlewareConstructedParams = {
+  chat: {
+    id?: number;
+  };
+  user: {
+    languageCode?: string;
+  };
+};
+
 export type Route<
   AvailableRoutes extends string = string,
   AvailableActions extends string = string
 > = {
   method: (
-    d: ConstructedParams<AvailableRoutes, AvailableActions>
+    d: ControllerConstructedParams<AvailableRoutes, AvailableActions>
   ) => Promise<void | false>;
   availableFrom: ('command' | 'message' | 'callback')[];
   commands?: string[];
@@ -113,13 +123,13 @@ export type Route<
     string,
     {
       method: (
-        d: ConstructedParams<AvailableRoutes, AvailableActions>
+        d: ControllerConstructedParams<AvailableRoutes, AvailableActions>
       ) => Promise<void>;
       stateIndependent?: boolean;
     }
   >;
   validator?: (
-    d: ConstructedParams<AvailableRoutes, AvailableActions>
+    d: ControllerConstructedParams<AvailableRoutes, AvailableActions>
   ) => boolean;
   // TODO: hasUnderKeyboard?: boolean
 };
@@ -141,6 +151,15 @@ export type Routes<
   > | null;
 };
 
+/**
+ * Should
+ *`await next();`
+ */
+export type CustomMiddleware = (
+  params: MiddlewareConstructedParams,
+  next: NextF
+) => Promise<void>;
+
 export type BotConfig<
   AvailableRoutes extends string = string,
   AvailableActions extends string = string,
@@ -148,6 +167,8 @@ export type BotConfig<
 > = {
   routes: Routes<AvailableRoutes, AvailableActions>;
   defaultRoute: AvailableRoutes;
+
+  middlewares?: CustomMiddleware[];
 
   i18n?: InitializeI18n;
   defaultTextGetters: {
@@ -158,7 +179,7 @@ export type BotConfig<
   environment?: 'development' | 'production';
 };
 
-export type ConstructedServiceParams = MutualConstructedParams & {
+export type ConstructedServiceParams = MutualControllerConstructedParams & {
   bot: TeleBot;
   botConfig: BotConfig;
   libParams: LibParams;

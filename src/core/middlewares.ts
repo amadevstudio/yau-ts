@@ -7,12 +7,13 @@ import {
 import { StorageRepository } from '@framework/repository/storage';
 import makeUserStateService from '@framework/service/userStateService';
 import initializeLogger from '@framework/toolbox/logger';
-import { BotConfig } from './types';
+import { BotConfig, CustomMiddleware } from './types';
+import { buildMiddlewareParams } from './methodParams';
 
 // Inject Logger
 // Dev state logger
 
-export function serviceMiddlewares(
+export function setupServiceMiddlewares(
   bot: TeleBot,
   storage: StorageRepository,
   botConfig: BotConfig
@@ -53,5 +54,23 @@ export function serviceMiddlewares(
 
   if (botConfig.environment === 'development') {
     bot.use(logStates as (ctx: TeleContextBare, next: NextF) => Promise<void>);
+  }
+}
+
+export function setupCustomMiddlewares(
+  bot: TeleBot,
+  customMiddlewares: CustomMiddleware[]
+) {
+  for (const middleware of customMiddlewares) {
+    async function processMiddleware(
+      ctx: TeleContext,
+      next: NextF
+    ): Promise<void> {
+      middleware(buildMiddlewareParams(ctx), next);
+    }
+
+    bot.use(
+      processMiddleware as (ctx: TeleContextBare, next: NextF) => Promise<void>
+    );
   }
 }
