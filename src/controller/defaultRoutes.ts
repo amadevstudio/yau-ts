@@ -1,14 +1,21 @@
 import { Routes } from '@framework/core/types';
 
-export function buildEntityNamesMap<T extends string>(
-  entity: Record<T, unknown>
-): { [key in T]: T } {
-  const arr = Object.keys(entity) as T[];
-
-  return arr.reduce((acc, key) => {
+export function buildEntityNamesMap<AvailableRoutes extends string>(
+  entity: readonly AvailableRoutes[]
+): { [key in AvailableRoutes]: AvailableRoutes } {
+  return entity.reduce((acc, key) => {
     acc[key] = key;
     return acc;
-  }, {} as Record<T, T>);
+  }, {} as Record<AvailableRoutes, AvailableRoutes>);
+}
+
+export function buildRoutesList<AvailableRoutes extends string>(
+  routeNames: readonly AvailableRoutes[]
+): (DefaultRouteNames | AvailableRoutes)[] {
+  return [
+    ...routeNames,
+    ...(Object.keys(defaultRoutes) as DefaultRouteNames[]),
+  ] as const;
 }
 
 // ------
@@ -16,20 +23,13 @@ export function buildEntityNamesMap<T extends string>(
 
 export const defaultRoutes = {
   $empty: null,
-};
+} as const;
 
 export type DefaultRouteNames = keyof typeof defaultRoutes;
 
-export const defaultRouteNamesMap = buildEntityNamesMap(defaultRoutes);
-
-export function buildRoutesList<AvailableRoutes extends string>(
-  routeNames: AvailableRoutes[]
-): (DefaultRouteNames | AvailableRoutes)[] {
-  return [
-    ...routeNames,
-    ...(Object.keys(defaultRoutes) as DefaultRouteNames[]),
-  ] as const;
-}
+export const defaultRouteNamesMap = buildEntityNamesMap(
+  Object.keys(defaultRoutes) as DefaultRouteNames[]
+);
 
 export function buildRoutes(routes: Routes) {
   return { ...routes, ...defaultRoutes };
@@ -44,7 +44,9 @@ export const defaultActions = {
 
 export type DefaultActionNames = keyof typeof defaultActions;
 
-export const defaultActionNamesMap = buildEntityNamesMap(defaultActions);
+export const defaultActionNamesMap = buildEntityNamesMap(
+  Object.keys(defaultActions) as DefaultActionNames[]
+);
 
 export function buildActionsList<AvailableActions extends string>(
   actionNames: AvailableActions[]
