@@ -26,7 +26,11 @@ class CustomLogger {
   }
 
   error(...args: unknown[]): void {
-    this.logger.error(`[${this.randomId}]`, ...args);
+    try {
+      this.logger.error(`[${this.randomId}]`, ...args);
+    } catch {
+      this.logger.error(`[${this.randomId}]`, ...(args.map(a => a instanceof Error ? new Error(String(a)) : a)));
+    }
   }
 
   debug(...args: unknown[]): void {
