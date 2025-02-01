@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FrameworkLogger } from '@framework/toolbox/logger';
+import { FrameworkLogger } from 'toolbox/logger';
 
 class TranslationEmpty extends Error {
   constructor(msg: string) {
@@ -92,7 +92,7 @@ function insertVars(template: string, vars?: string[]) {
   return result;
 }
 
-export default function setupI18n<
+export function setupI18n<
   Languages extends string = DefaultAvailableLanguages
 >(
   dictionary: Dictionary<Languages>,

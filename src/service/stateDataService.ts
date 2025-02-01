@@ -1,7 +1,7 @@
-import { ButtonData, TeleCallback } from '@framework/controller/types';
+import { ButtonData, TeleCallback } from 'controller/types';
 import { UserStateService } from './userStateService';
-import { DefaultActionNames } from '@framework/controller/defaultRoutes';
-import { typeFieldName } from '@framework/core/types';
+import { DefaultActionNames } from 'controller/defaultRoutes';
+import { typeFieldName } from 'core/types';
 
 function decodeCallbackData(call: TeleCallback): ButtonData {
   if (call.data === undefined) {

@@ -5,25 +5,26 @@ import {
   LibParams,
   MutualControllerConstructedParams,
   MiddlewareConstructedParams,
-} from '@framework/core/types';
+  FrameworkGenerics,
+} from 'core/types';
 import {
   TeleBot,
   TeleCallback,
   TeleContext,
   TeleMessage,
-} from '@framework/controller/types';
+} from 'controller/types';
 import {
   makeRender,
   makeRenderToChat,
   makeOuterSender,
-} from '@framework/controller/render';
-import { initializeI18n } from '@framework/i18n/setup';
-import { StorageRepository } from '@framework/repository/storage';
-import { getUnitedData } from '@framework/service/stateDataService';
-import { goBackProcessor } from '@framework/controller/controllers';
-import makeGoBack from '@framework/components/goBack';
-import { buildInlineMarkupButton } from '@framework/components/button';
-import makeUserStateService from '@framework/service/userStateService';
+} from 'controller/render';
+import { initializeI18n } from 'i18n/setup';
+import { StorageRepository } from 'repository/storage';
+import { getUnitedData } from 'service/stateDataService';
+import { goBackProcessor } from 'controller/controllers';
+import makeGoBack from 'components/goBack';
+import { buildInlineMarkupButton } from 'components/button';
+import makeUserStateService from 'service/userStateService';
 
 // Dig message and callback
 function separateMessageAndCallback(libParams: LibParams): {
@@ -41,22 +42,22 @@ function separateMessageAndCallback(libParams: LibParams): {
 }
 
 // Mutual for service and common routes
-function buildMutualParams<AvailableRoutes extends string>({
+function buildMutualParams<G extends FrameworkGenerics = FrameworkGenerics>({
   libParams,
   storage,
 }: {
   libParams: LibParams;
   storage: StorageRepository;
-}): MutualControllerConstructedParams<AvailableRoutes> {
+}): MutualControllerConstructedParams<G> {
   const { message, callback } = separateMessageAndCallback(libParams);
 
   const chatId = libParams.ctx.chatId!;
 
   const languageCode = (message?.from?.language_code ||
-    callback?.from.language_code)!;
+    callback?.from.language_code)! as G['AL'];
 
   const services = {
-    userStateService: makeUserStateService<AvailableRoutes>(storage, chatId),
+    userStateService: makeUserStateService<G['AR']>(storage, chatId),
   };
 
   const isCommand = libParams.isCommand ?? false;
@@ -83,9 +84,7 @@ function buildMutualParams<AvailableRoutes extends string>({
 
 // Service params
 export function constructServiceParams<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
+  G extends FrameworkGenerics = FrameworkGenerics
 >({
   bot,
   botConfig,
@@ -93,18 +92,10 @@ export function constructServiceParams<
   storage,
 }: {
   bot: TeleBot;
-  botConfig: BotConfig<{
-    AR: AvailableRoutes;
-    AA: AvailableActions;
-    AL: AvailableLanguages;
-  }>;
+  botConfig: BotConfig;
   libParams: LibParams;
   storage: StorageRepository;
-}): ConstructedServiceParams<
-  AvailableRoutes,
-  AvailableActions,
-  AvailableLanguages
-> {
+}): ConstructedServiceParams {
   return {
     // Service params
     bot,
@@ -113,15 +104,13 @@ export function constructServiceParams<
     storage,
     routes: botConfig.routes,
 
-    ...buildMutualParams({ libParams, storage }),
+    ...buildMutualParams<G>({ libParams, storage }),
   };
 }
 
 // Common params
 export async function constructParams<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
+  G extends FrameworkGenerics = FrameworkGenerics
 >({
   bot,
   routeName,
@@ -132,24 +121,14 @@ export async function constructParams<
   isStepBack = false,
 }: {
   bot: TeleBot;
-  routeName: AvailableRoutes;
+  routeName: G['AR'];
   // routeParams: TRoute,
-  actionName?: AvailableActions;
-  botConfig: BotConfig<{
-    AR: AvailableRoutes;
-    AA: AvailableActions;
-    AL: AvailableLanguages;
-  }>;
+  actionName?: G['AA'];
+  botConfig: BotConfig<G>;
   libParams: LibParams;
   storage: StorageRepository;
   isStepBack?: boolean;
-}): Promise<
-  ControllerConstructedParams<
-    AvailableRoutes,
-    AvailableActions,
-    AvailableLanguages
-  >
-> {
+}): Promise<ControllerConstructedParams<G>> {
   const { message, callback } = separateMessageAndCallback(libParams);
 
   const messageData = (msg: TeleMessage | undefined) => {
@@ -164,7 +143,7 @@ export async function constructParams<
     );
   };
 
-  const mutualParams = buildMutualParams<AvailableRoutes>({
+  const mutualParams = buildMutualParams<G>({
     libParams,
     storage,
   });
@@ -175,9 +154,9 @@ export async function constructParams<
     !isStepBack && currentState !== null && routeName !== currentState;
 
   const languageCode = (message.from?.language_code ||
-    callback?.from.language_code)! as AvailableLanguages;
+    callback?.from.language_code)! as G['AL'];
 
-  const i18n = initializeI18n<AvailableLanguages>(
+  const i18n = initializeI18n<G['AL']>(
     botConfig.i18n,
     libParams.ctx.$frameworkLogger,
     languageCode
@@ -208,7 +187,7 @@ export async function constructParams<
 
     goBackAction: goBackProcessor,
 
-    render: makeRender<AvailableRoutes, AvailableActions, AvailableLanguages>({
+    render: makeRender({
       bot,
       routeName,
       currentState,
@@ -218,11 +197,7 @@ export async function constructParams<
       isMessage: mutualParams.isMessage,
       routes: botConfig.routes,
     }),
-    renderToChat: makeRenderToChat<
-      AvailableRoutes,
-      AvailableActions,
-      AvailableLanguages
-    >({
+    renderToChat: makeRenderToChat({
       bot,
       routeName,
       storage,
@@ -236,7 +211,7 @@ export async function constructParams<
         i18n,
       }),
 
-      buildButton: buildInlineMarkupButton<AvailableRoutes, AvailableActions>,
+      buildButton: buildInlineMarkupButton,
     },
 
     i18n: i18n,

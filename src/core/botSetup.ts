@@ -3,75 +3,47 @@ import {
   actionFieldName,
   BotConfig,
   ConstructedServiceParams,
+  FrameworkGenerics,
   LibParams,
   Route,
   typeFieldName,
-} from '@framework/core/types';
-import {
-  FrameworkGenerics,
-  TeleBot,
-  TeleContext,
-} from '@framework/controller/types';
-import {
-  constructParams,
-  constructServiceParams,
-} from '@framework/core/methodParams';
-import initStorage, { StorageRepository } from '@framework/repository/storage';
+} from 'core/types';
+import { TeleBot, TeleContext } from 'controller/types';
+import { constructParams, constructServiceParams } from 'core/methodParams';
+import initStorage, { StorageRepository } from 'repository/storage';
 import {
   correctEmptyStateInputState,
   goBackProcessor,
-} from '@framework/controller/controllers';
+} from 'controller/controllers';
 import {
   initializeValidateAction,
   initializeValidateMessages,
   validateGoBack,
 } from './validators';
-import { makeUsersStateService } from '@framework/service/userStateService';
+import { makeUsersStateService } from 'service/userStateService';
 import {
   catchMiddlewaresError,
   setupCustomMiddlewares,
   setupServiceMiddlewares,
 } from './middlewares';
-import { goBackType } from '@framework/components/goBack';
-import { escapeSpecialCharacters } from '@framework/toolbox/regex';
+import { goBackType } from 'components/goBack';
+import { escapeSpecialCharacters } from 'toolbox/regex';
 
 // Curry service controllers
-function makeServiceProcessQuery<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
->(
+function makeServiceProcessQuery(
   bot: TeleBot,
-  botConfig: BotConfig<{
-    AR: AvailableRoutes;
-    AA: AvailableActions;
-    AL: AvailableLanguages;
-  }>,
+  botConfig: BotConfig,
   storage: StorageRepository
 ) {
   return async function (
     processor:
+      | ((serviceParams: ConstructedServiceParams) => Promise<void>)
       | ((
-          serviceParams: ConstructedServiceParams<
-            AvailableRoutes,
-            AvailableActions,
-            AvailableLanguages
-          >
-        ) => Promise<void>)
-      | ((
-          serviceParams: ConstructedServiceParams<
-            AvailableRoutes,
-            AvailableActions,
-            AvailableLanguages
-          >
+          serviceParams: ConstructedServiceParams
         ) => Promise<boolean | undefined>),
     libParams: LibParams
   ) {
-    const csp = constructServiceParams<
-      AvailableRoutes,
-      AvailableActions,
-      AvailableLanguages
-    >({
+    const csp = constructServiceParams({
       bot,
       botConfig,
       libParams,
@@ -86,30 +58,12 @@ function operable() {
   return true;
 }
 
-type serviceProcessQuery<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
-> = ReturnType<
-  typeof makeServiceProcessQuery<
-    AvailableRoutes,
-    AvailableActions,
-    AvailableLanguages
-  >
->;
+type serviceProcessQuery = ReturnType<typeof makeServiceProcessQuery>;
 
 // Init service controllers
-function serviceControllers<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
->(
+function serviceControllers(
   bot: TeleBot,
-  serviceProcessQuery: serviceProcessQuery<
-    AvailableRoutes,
-    AvailableActions,
-    AvailableLanguages
-  >
+  serviceProcessQuery: serviceProcessQuery
 ) {
   // GoBack module
   bot.callbackQuery(
@@ -130,27 +84,15 @@ function serviceControllers<
 }
 
 // Curry controllers
-function makeProcessQuery<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
->(
+function makeProcessQuery<G extends FrameworkGenerics = FrameworkGenerics>(
   bot: TeleBot,
-  routeName: AvailableRoutes,
-  routeParams: Route<AvailableRoutes, AvailableActions, AvailableLanguages>,
-  botConfig: BotConfig<{
-    AR: AvailableRoutes;
-    AA: AvailableActions;
-    AL: AvailableLanguages;
-  }>,
+  routeName: G['AR'],
+  routeParams: Route,
+  botConfig: BotConfig,
   storage: StorageRepository
 ) {
   return async function (libParams: LibParams) {
-    const cp = await constructParams<
-      AvailableRoutes,
-      AvailableActions,
-      AvailableLanguages
-    >({
+    const cp = await constructParams({
       bot,
       routeName,
       botConfig,
@@ -205,28 +147,16 @@ function makeProcessQuery<
   };
 }
 
-function makeProcessAction<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
->(
+function makeProcessAction<G extends FrameworkGenerics = FrameworkGenerics>(
   bot: TeleBot,
-  routeName: AvailableRoutes,
-  routeParams: Route<AvailableRoutes, AvailableActions, AvailableLanguages>,
-  actionName: AvailableActions,
-  botConfig: BotConfig<{
-    AR: AvailableRoutes;
-    AA: AvailableActions;
-    AL: AvailableLanguages;
-  }>,
+  routeName: G['AR'],
+  routeParams: Route<G>,
+  actionName: G['AA'],
+  botConfig: BotConfig<G>,
   storage: StorageRepository
 ) {
   return async function (libParams: LibParams) {
-    const cp = await constructParams<
-      AvailableRoutes,
-      AvailableActions,
-      AvailableLanguages
-    >({
+    const cp = await constructParams<G>({
       bot,
       routeName,
       actionName,
@@ -240,21 +170,13 @@ function makeProcessAction<
 }
 
 // Register all routes
-async function initializeRoutes<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
->({
+async function initializeRoutes({
   bot,
   botConfig,
   storage,
 }: {
   bot: TeleBot;
-  botConfig: BotConfig<{
-    AR: AvailableRoutes;
-    AA: AvailableActions;
-    AL: AvailableLanguages;
-  }>;
+  botConfig: BotConfig;
   storage: StorageRepository;
 }) {
   const shouldProcess = operable();
@@ -274,30 +196,25 @@ async function initializeRoutes<
   // Catch middleware errors
   catchMiddlewaresError(bot);
 
-  const serviceProcessQuery = makeServiceProcessQuery<
-    AvailableRoutes,
-    AvailableActions,
-    AvailableLanguages
-  >(bot, botConfig, storage);
+  const serviceProcessQuery = makeServiceProcessQuery(bot, botConfig, storage);
   serviceControllers(bot, serviceProcessQuery);
 
-  const usersStateService = makeUsersStateService<AvailableRoutes>(storage);
+  const usersStateService = makeUsersStateService(storage);
 
   // Initialize routes
-  for (const [routeName, routeParams] of Object.entries(botConfig.routes) as [
-    AvailableRoutes,
-    Route<AvailableRoutes, AvailableActions, AvailableLanguages>
-  ][]) {
+  for (const [routeName, routeParams] of Object.entries(botConfig.routes)) {
     // System routes
     if (routeParams === null) {
       continue;
     }
 
-    const processQuery = makeProcessQuery<
-      AvailableRoutes,
-      AvailableActions,
-      AvailableLanguages
-    >(bot, routeName, routeParams, botConfig, storage);
+    const processQuery = makeProcessQuery(
+      bot,
+      routeName,
+      routeParams,
+      botConfig,
+      storage
+    );
 
     // Command section
     if (routeParams.availableFrom.includes('command')) {
@@ -315,7 +232,7 @@ async function initializeRoutes<
 
     // Message section
     if (routeParams.availableFrom.includes('message')) {
-      const validateMessage = initializeValidateMessages<AvailableRoutes>(
+      const validateMessage = initializeValidateMessages(
         routeParams.statesForInput ?? [routeName],
         usersStateService
       );
@@ -352,11 +269,14 @@ async function initializeRoutes<
     // Actions section (in-state actions)
     if (routeParams.actions) {
       for (const actionName in routeParams.actions) {
-        const processAction = makeProcessAction<
-          AvailableRoutes,
-          AvailableActions,
-          AvailableLanguages
-        >(bot, routeName, routeParams, actionName, botConfig, storage);
+        const processAction = makeProcessAction(
+          bot,
+          routeName,
+          routeParams,
+          actionName,
+          botConfig,
+          storage
+        );
         const validateAction = initializeValidateAction(
           routeName,
           routeParams,
@@ -388,11 +308,9 @@ async function initializeRoutes<
 }
 
 // Framework entrypoint
-export default async function initializeBot<G extends FrameworkGenerics>(
-  token: string,
-  storageUrl: string,
-  botConfig: BotConfig<G>
-) {
+export async function initializeBot<
+  G extends FrameworkGenerics = FrameworkGenerics
+>(token: string, storageUrl: string, botConfig: BotConfig<G>) {
   const augmentedBotConfig = {
     testTelegram: false,
     environment: 'development' as const,

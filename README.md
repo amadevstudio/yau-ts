@@ -76,19 +76,14 @@ Just use render to show your state, as well as other useful functions! The examp
 ```ts
 import ENV from "./env";
 
-import initializeBot from "yau/src/core/botSetup";
-import type { BotConfig } from "yau/src/core/types";
-import {
-  type AvailableActions,
-  type AvailableRoutes,
-  routes,
-} from "./controller/routes";
-import setupI18n from "yau/src/i18n/setup";
+import { makeRoutes } from "./controller/routes";
 
-import configureI18n, {
-  navigation,
-  type AvailableLanguages,
-} from "./public/i18n";
+import configureI18n, { navigation } from "./public/i18n";
+import { makeMiddlewares } from "./middleware/middlewares";
+import { makeRepositories } from "./repository/repositories";
+import { makeServices } from "./service/services";
+import type { G } from "./controller/routeConsts";
+import { setupI18n, type BotConfig, initializeBot } from "yau";
 
 const fallbackLanguageCode = "en";
 
@@ -96,17 +91,20 @@ const i18n = setupI18n(configureI18n({ appName: ENV.APP_NAME }), {
   fallbackLanguageCode: fallbackLanguageCode,
 });
 
-const botConfig: BotConfig<
-  AvailableRoutes,
-  AvailableActions,
-  AvailableLanguages
-> = {
+const repositories = makeRepositories({ baseUrl: "http://localhost:3000" });
+const services = makeServices({ repositories });
+const middlewares = makeMiddlewares({ services });
+const routes = makeRoutes({ services });
+
+const botConfig: BotConfig<G> = {
   routes,
-  defaultRoute: "start",
+  defaultRoute: "menu",
+
+  middlewares: middlewares,
 
   i18n,
   defaultTextGetters: {
-    goBack: (languageCode: AvailableLanguages) =>
+    goBack: (languageCode) =>
       navigation.s.goBack[languageCode] ??
       navigation.s.goBack[fallbackLanguageCode],
   },
@@ -115,13 +113,13 @@ const botConfig: BotConfig<
   environment: ENV.ENVIRONMENT,
 };
 
-(await initializeBot(ENV.BOT_TOKEN, ENV.REDIS_URL, botConfig)).start();
-```
+const bot = await initializeBot(ENV.BOT_TOKEN, ENV.REDIS_URL, botConfig);
+bot.start();```
 
 - i18n.ts
 
 ```ts
-import type { Dictionary } from "yau/src/i18n/setup";
+import type { Dictionary } from "yau";
 
 export type AvailableLanguages = "ru" | "en";
 
@@ -161,60 +159,100 @@ export default function configureI18n({
 - routes.ts
 
 ```ts
-import type { Routes, LocalRoutes } from "yau/src/core/types";
-import { start, menu, deepMethod } from "./user/entry";
-import {
-  buildRoutesList,
-  buildRoutes,
-  buildEntityNamesMap,
-} from "yau/src/controller/defaultRoutes";
+import { type Routes, buildRoutes } from "yau";
+import type { MakeServices } from "../service/services";
+import { makeUserEntryRoutes } from "./user/userEntryControllers";
+import { makeControlledChannelsRoutes } from "./controlledChannels/controlledChannelsController";
+import { type G, type LR } from "./routeConsts";
 
-type LocalRouteNames = "start" | "menu" | "deepMethod";
-type LocalActionNames = string;
+type MakeRoutes = (p: { services: ReturnType<MakeServices> }) => Routes<G>;
 
-const localRoutes: LocalRoutes<LocalRouteNames, LocalActionNames> = {
-  start: {
-    method: start,
-    availableFrom: ["command"],
-    routes: ["menu"],
-  },
-  menu: {
-    method: menu,
-    availableFrom: ["command", "callback"],
-  },
-  deepMethod: {
-    method: deepMethod,
-    availableFrom: ["callback"],
-  },
+export const makeRoutes = ({
+  services,
+}: Parameters<MakeRoutes>[0]): ReturnType<MakeRoutes> => {
+  const entryRoutes = makeUserEntryRoutes();
+  const controlledChannelRoutes = makeControlledChannelsRoutes({ services });
+
+  const localRoutes: LR = {
+    start: {
+      method: start,
+      availableFrom: ["command"],
+      routes: ["menu"],
+    },
+    menu: {
+      method: menu,
+      availableFrom: ["command", "callback"],
+    },
+    deepMethod: {
+      method: deepMethod,
+      availableFrom: ["callback"],
+    },
+  };
+  return buildRoutes(localRoutes);
 };
+```
 
-export const localRouteNameMap = buildEntityNamesMap(localRoutes);
+- routeConsts.ts
 
-const availableRoutes = buildRoutesList<LocalRouteNames>(
-  Object.keys(localRoutes) as LocalRouteNames[]
-);
+```ts
+import {
+  type ControllerConstructedParams,
+  type LocalRoutes,
+  buildEntityNamesMap,
+  buildRoutesList,
+} from "yau";
+import type { AvailableLanguages } from "../public/i18n";
 
+// Routes
+export const localRouteNames = [
+  "start",
+  "menu",
+  "deepMethod"
+] as const;
+type LocalRouteNames = (typeof localRouteNames)[number];
+
+// Map to use in controllers
+export const localRouteNameMap = buildEntityNamesMap(localRouteNames);
+// Array to build types
+const availableRoutes = buildRoutesList(localRouteNames);
 console.log(availableRoutes);
-
 export type AvailableRoutes = (typeof availableRoutes)[number];
 
-export const routes: Routes<AvailableRoutes> = buildRoutes(localRoutes);
+// Actions
+// TODO
+type LocalActionNames = string;
+type AvailableActions = LocalActionNames;
 
-export type AvailableActions = LocalActionNames;
+export type G = {
+  AR: AvailableRoutes;
+  AA: AvailableActions;
+  AL: AvailableLanguages;
+};
+
+export type D = ControllerConstructedParams<G>;
+
+export type LR = LocalRoutes<{
+  AR: LocalRouteNames;
+  AA: LocalActionNames;
+  AL: G["AL"];
+}>;
 ```
 
 - entry.ts
 
 ```ts
-import type { MessageStructure } from "yau/src/controller/types";
-import type { ConstructedParams } from "yau/src/core/types";
-import { localRouteNameMap } from "../routes";
+import type { MessageStructure, ControllerConstructedParams, Route } from "yau";
+import { localRouteNameMap, type G } from "../routeConsts";
 
 type MenuData = {
-  someData?: string;
+  fromStart?: boolean;
 };
 
-export async function start(d: ConstructedParams) {
+type MakeUserEntryRoutes = () => {
+  [key in "start" | "menu" | "terms"]: Route<G>["method"];
+};
+
+async function start(d: ConstructedParams) {
   const messages: MessageStructure[] = [
     {
       type: "text",
@@ -238,7 +276,7 @@ export async function start(d: ConstructedParams) {
   await d.render(messages, { resending: d.isCommand });
 }
 
-export async function menu(d: ConstructedParams) {
+async function menu(d: ConstructedParams) {
   const data = d.unitedData as MenuData;
 
   const messages: MessageStructure[] = [
@@ -258,7 +296,7 @@ export async function menu(d: ConstructedParams) {
   await d.render(messages, { resending: d.isCommand });
 }
 
-export async function deepMethod(d: ConstructedParams) {
+async function deepMethod(d: ConstructedParams) {
   const messages: MessageStructure[] = [
     {
       type: "text",
@@ -267,5 +305,11 @@ export async function deepMethod(d: ConstructedParams) {
     },
   ] as const;
   await d.render(messages);
+}
+
+
+
+export function makeUserEntryRoutes(): ReturnType<MakeUserEntryRoutes> {
+  return { start, menu, deepMethod };
 }
 ```

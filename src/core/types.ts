@@ -5,13 +5,18 @@ import {
   InlineMarkupButton,
   TeleContext,
   NextF,
-  FrameworkGenerics,
-} from '@framework/controller/types';
-import { InitializeI18n, I18n } from '@framework/i18n/setup';
-import { UserStateService } from '@framework/service/userStateService';
+} from 'controller/types';
+import { InitializeI18n, I18n } from 'i18n/setup';
+import { UserStateService } from 'service/userStateService';
 import { defaultRoutes } from '../controller/defaultRoutes';
-import { StorageRepository } from '@framework/repository/storage';
-import { goBackProcessor } from '@framework/controller/controllers';
+import { StorageRepository } from 'repository/storage';
+import { goBackProcessor } from 'controller/controllers';
+
+export type FrameworkGenerics = {
+  AR: string; // AvailableRoutes
+  AA: string; // AvailableActions
+  AL: string; // AvailableLanguages
+};
 
 export const typeFieldName = '$tp';
 export const actionFieldName = '$act';
@@ -52,23 +57,26 @@ export type Message = {
   };
 };
 
-export type MutualControllerConstructedParams<AvailableRoutes extends string> =
-  {
-    chat: {
-      id: number;
-    };
-    user: {
-      languageCode: string;
-    };
-
-    isCommand: boolean;
-    isMessage: boolean;
-    isCallback: boolean;
-    isAction: boolean;
-
-    services: { userStateService: UserStateService<AvailableRoutes> };
+export type MutualControllerConstructedParams<
+  G extends FrameworkGenerics = FrameworkGenerics
+> = {
+  chat: {
+    id: number;
   };
-export type MiddlewareConstructedParams<AvailableRoutes extends string> = {
+  user: {
+    languageCode: string;
+  };
+
+  isCommand: boolean;
+  isMessage: boolean;
+  isCallback: boolean;
+  isAction: boolean;
+
+  services: { userStateService: UserStateService<G['AR']> };
+};
+export type MiddlewareConstructedParams<
+  AvailableRoutes extends string = string
+> = {
   chat: {
     id?: number;
   };
@@ -80,19 +88,17 @@ export type MiddlewareConstructedParams<AvailableRoutes extends string> = {
 };
 
 export type ControllerConstructedParams<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
-> = MutualControllerConstructedParams<AvailableRoutes> & {
+  G extends FrameworkGenerics = FrameworkGenerics
+> = MutualControllerConstructedParams<G> & {
   message?: Message;
   callback?: {
     message?: Message;
     id: string;
   };
 
-  routeName: AvailableRoutes;
-  actionName: AvailableActions | undefined;
-  stateBeforeInteraction: string | null;
+  routeName: G['AR'];
+  actionName: G['AA'] | undefined;
+  stateBeforeInteraction: G['AR'] | null;
 
   unitedData: object;
 
@@ -113,85 +119,51 @@ export type ControllerConstructedParams<
     };
 
     buildButton: (
-      type: AvailableRoutes | AvailableActions,
+      type: G['AR'] | G['AA'],
       text: string,
       data?: Record<string, unknown>
-    ) => InlineMarkupButton<AvailableRoutes, AvailableActions>;
+    ) => InlineMarkupButton<G['AR'] | G['AA']>;
   };
 
-  i18n: I18n<AvailableLanguages>;
+  i18n: I18n<G['AL']>;
 };
 
-export type Route<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
-> = {
-  method: (
-    d: ControllerConstructedParams<
-      AvailableRoutes,
-      AvailableActions,
-      AvailableLanguages
-    >
-  ) => Promise<void | false>;
+export type Route<G extends FrameworkGenerics = FrameworkGenerics> = {
+  method: (d: ControllerConstructedParams) => Promise<void | false>;
   availableFrom: ('command' | 'message' | 'callback')[];
   commands?: string[];
-  routes?: AvailableRoutes[];
+  routes?: G['AR'][];
   waitsForInput?: boolean;
-  statesForInput?: AvailableRoutes[]; // States for message input (for example, its own name)
+  statesForInput?: G['AR'][]; // States for message input (for example, its own name)
   actions?: Record<
-    AvailableActions,
+    G['AA'],
     {
-      method: (
-        d: ControllerConstructedParams<
-          AvailableRoutes,
-          AvailableActions,
-          AvailableLanguages
-        >
-      ) => Promise<void>;
+      method: (d: ControllerConstructedParams) => Promise<void>;
       stateIndependent?: boolean;
     }
   >;
-  validator?: (
-    d: ControllerConstructedParams<
-      AvailableRoutes,
-      AvailableActions,
-      AvailableLanguages
-    >
-  ) => boolean;
+  validator?: (d: ControllerConstructedParams) => boolean;
   hasReplyKeyboard?: boolean;
 };
 
-export type LocalRoutes<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
-> = {
-  [key in AvailableRoutes]: Route<
-    AvailableRoutes,
-    AvailableActions,
-    AvailableLanguages
-  >;
+export type LocalRoutes<G extends FrameworkGenerics = FrameworkGenerics> = {
+  [key in G['AR']]: Route<G>;
 };
 
-export type Routes<G extends FrameworkGenerics> = {
-  [key in G['AR'] | keyof typeof defaultRoutes]: Route<
-    G['AR'],
-    G['AA'],
-    G['AL']
-  > | null;
+export type Routes<G extends FrameworkGenerics = FrameworkGenerics> = {
+  [key in G['AR'] | keyof typeof defaultRoutes]: Route<G> | null;
 };
 
 /**
  * Should
  *`await next();`
  */
-export type CustomMiddleware<AvailableRoutes extends string> = (
+export type CustomMiddleware<AvailableRoutes extends string = string> = (
   params: MiddlewareConstructedParams<AvailableRoutes>,
   next: NextF
 ) => Promise<void>;
 
-export type BotConfig<G extends FrameworkGenerics> = {
+export type BotConfig<G extends FrameworkGenerics = FrameworkGenerics> = {
   routes: Routes<G>;
   defaultRoute: G['AR'];
 
@@ -206,22 +178,10 @@ export type BotConfig<G extends FrameworkGenerics> = {
   environment?: 'development' | 'production';
 };
 
-export type ConstructedServiceParams<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
-> = MutualControllerConstructedParams<AvailableRoutes> & {
+export type ConstructedServiceParams = MutualControllerConstructedParams & {
   bot: TeleBot;
-  botConfig: BotConfig<{
-    AR: AvailableRoutes;
-    AA: AvailableActions;
-    AL: AvailableLanguages;
-  }>;
+  botConfig: BotConfig;
   libParams: LibParams;
-  routes: Routes<{
-    AR: AvailableRoutes;
-    AA: AvailableActions;
-    AL: AvailableLanguages;
-  }>;
+  routes: Routes;
   storage: StorageRepository;
 };

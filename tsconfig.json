@@ -119,7 +119,7 @@
 
     "baseUrl": "./src",
     "paths": {
-      "@framework/*": ["./*"]
+      // "@framework/*": ["./*"]
     }
   }
 }

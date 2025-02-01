@@ -1,7 +1,7 @@
-import { defaultActionNamesMap } from '@framework/controller/defaultRoutes';
+import { defaultActionNamesMap } from 'controller/defaultRoutes';
 import { I18n } from '../i18n/setup';
 import { buildInlineMarkupButton } from './button';
-import { BotConfig } from '@framework/core/types';
+import { BotConfig } from 'core/types';
 
 export const goBackType = defaultActionNamesMap.$back;
 

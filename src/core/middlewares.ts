@@ -4,9 +4,9 @@ import {
   NextF,
   TeleContextBare,
   LibraryHttpError,
-} from '@framework/controller/types';
-import { StorageRepository } from '@framework/repository/storage';
-import initializeLogger from '@framework/toolbox/logger';
+} from 'controller/types';
+import { StorageRepository } from 'repository/storage';
+import initializeLogger from 'toolbox/logger';
 import { BotConfig, CustomMiddleware } from './types';
 import { buildMiddlewareParams } from './methodParams';
 import { LibraryError } from '../controller/types';

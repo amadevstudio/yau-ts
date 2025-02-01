@@ -1,12 +1,24 @@
-import { Routes } from '@framework/core/types';
+import { Routes } from 'core/types';
 
 export function buildEntityNamesMap<AvailableRoutes extends string>(
   entity: readonly AvailableRoutes[]
-): { [key in AvailableRoutes]: AvailableRoutes } {
-  return entity.reduce((acc, key) => {
-    acc[key] = key;
+): {
+  [key in DefaultRouteNames | AvailableRoutes]: key;
+} {
+  const defaultRouteKeys = Object.keys(defaultRoutes) as DefaultRouteNames[];
+  const allKeys = [...entity, ...defaultRouteKeys] as (
+    | AvailableRoutes
+    | DefaultRouteNames
+  )[];
+
+  // Build the object with a broader type, then assert the final type
+  const result = allKeys.reduce((acc, key) => {
+    acc[key] = key; // No type error here
     return acc;
-  }, {} as Record<AvailableRoutes, AvailableRoutes>);
+  }, {} as Record<string, string>);
+
+  // Assert the final result to the correct mapped type
+  return result as { [key in DefaultRouteNames | AvailableRoutes]: key };
 }
 
 export function buildRoutesList<AvailableRoutes extends string>(

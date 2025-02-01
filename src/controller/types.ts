@@ -1,4 +1,4 @@
-import { FrameworkLogger } from '@framework/toolbox/logger';
+import { FrameworkLogger } from 'toolbox/logger';
 import { Bot, Context, GrammyError, HttpError, NextFunction } from 'grammy';
 import {
   CallbackQuery,
@@ -11,12 +11,6 @@ import {
   ReplyKeyboardMarkup,
   WebAppInfo,
 } from 'grammy/types';
-
-export type FrameworkGenerics = {
-  AR: string; // AvailableRoutes
-  AA: string; // AvailableActions
-  AL: string; // AvailableLanguages
-}
 
 export class TeleBot extends Bot {}
 export type TeleContextBare = Context;

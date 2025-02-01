@@ -1,4 +1,4 @@
-import { InlineMarkupButton } from '@framework/controller/types';
+import { InlineMarkupButton } from 'controller/types';
 
 export function buildInlineMarkupButton<
   AvailableRoutes extends string,

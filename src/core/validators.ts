@@ -1,8 +1,8 @@
-import { TeleCallback, TeleMessage } from '@framework/controller/types';
-import { getCallbackType } from '@framework/service/stateDataService';
-import { UsersStateService } from '@framework/service/userStateService';
+import { TeleCallback, TeleMessage } from 'controller/types';
+import { getCallbackType } from 'service/stateDataService';
+import { UsersStateService } from 'service/userStateService';
 import { Route } from './types';
-import { defaultActionNamesMap } from '@framework/controller/defaultRoutes';
+import { defaultActionNamesMap } from 'controller/defaultRoutes';
 
 export function validateCommand(msg: string) {
   return msg[0] === '/';

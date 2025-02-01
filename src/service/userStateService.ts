@@ -1,6 +1,6 @@
-import { ResultMessageStructure } from '@framework/controller/types';
-import { getAllValues } from '@framework/lib/objects';
-import { StorageRepository } from '@framework/repository/storage';
+import { ResultMessageStructure } from 'controller/types';
+import { getAllValues } from 'lib/objects';
+import { StorageRepository } from 'repository/storage';
 
 type StateFunctionChatIdParam = string | number;
 type StateFunction = (chatId: StateFunctionChatIdParam) => string;
@@ -44,7 +44,7 @@ export function makeUsersStateService<AvailableRoutes extends string = string>(
   } as const;
 }
 
-export type UserStateService<AvailableRoutes extends string> = {
+export type UserStateService<AvailableRoutes extends string = string> = {
   clearUserStorage(): Promise<void>;
   getUserStates(): Promise<AvailableRoutes[]>;
   getUserCurrentState(): Promise<AvailableRoutes | null>;

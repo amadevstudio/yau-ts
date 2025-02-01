@@ -8,9 +8,9 @@ import {
   ResultMessageStructure,
   TeleInlineKeyboardButton,
   TeleKeyboardButton,
-  FrameworkGenerics,
 } from 'controller/types';
 import {
+  FrameworkGenerics,
   RenderCurried,
   RenderParams,
   RenderToChatCurried,

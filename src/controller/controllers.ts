@@ -1,37 +1,16 @@
-import { constructParams } from '@framework/core/methodParams';
-import { ConstructedServiceParams } from '@framework/core/types';
+import { constructParams } from 'core/methodParams';
+import { ConstructedServiceParams } from 'core/types';
 import { defaultRouteNamesMap } from './defaultRoutes';
 
-function devLog<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
->(
-  d: ConstructedServiceParams<
-    AvailableRoutes,
-    AvailableActions,
-    AvailableLanguages
-  >,
-  ...params: unknown[]
-) {
+function devLog(d: ConstructedServiceParams, ...params: unknown[]) {
   if (d.botConfig.environment === 'development') {
     d.libParams.ctx.$frameworkLogger.debug(params);
   }
 }
 
-export async function correctEmptyStateInputState<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
->(
-  d: ConstructedServiceParams<
-    AvailableRoutes,
-    AvailableActions,
-    AvailableLanguages
-  >
-) {
+export async function correctEmptyStateInputState(d: ConstructedServiceParams) {
   const [prev, curr] =
-    (await d.services.userStateService.getUserPreviousAndCurrentStates()) as AvailableRoutes[];
+    await d.services.userStateService.getUserPreviousAndCurrentStates();
   if (prev === undefined) {
     return;
   }
@@ -70,17 +49,7 @@ export async function correctEmptyStateInputState<
   }
 }
 
-export async function goBackProcessor<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
->(
-  d: ConstructedServiceParams<
-    AvailableRoutes,
-    AvailableActions,
-    AvailableLanguages
-  >
-) {
+export async function goBackProcessor(d: ConstructedServiceParams) {
   devLog(
     d,
     `States before goBack`,
@@ -105,11 +74,7 @@ export async function goBackProcessor<
 
   // Run the method
   method(
-    await constructParams<
-      AvailableRoutes,
-      AvailableActions,
-      AvailableLanguages
-    >({
+    await constructParams({
       bot: d.bot,
       routeName: activePrev,
       botConfig: d.botConfig,
