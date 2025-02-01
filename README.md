@@ -57,6 +57,10 @@ Using asdf plugin manager
 
 You must have Redis to keep user state
 
+## A working bot example on the framework
+
+You can find out what I build with the framework on <https://github.com/amadevstudio/chacma-bot>
+
 ## Simple demo example
 
 Just use render to show your state, as well as other useful functions! The example shows the setup, i18n and how render method works.

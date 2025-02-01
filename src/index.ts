@@ -1,4 +1,3 @@
-export type { UserStateService } from './service/userStateService';
 export type {
   ControllerConstructedParams,
   FrameworkGenerics,
@@ -7,14 +6,17 @@ export type {
   Routes,
   CustomMiddleware,
   MiddlewareConstructedParams,
-  BotConfig
+  BotConfig,
 } from './core/types';
+export type { MessageStructure, NextF } from './controller/types';
+export { type Dictionary } from './i18n/setup';
+
+export { setupI18n } from './i18n/setup';
+
 export {
   buildEntityNamesMap,
   buildRoutesList,
   buildRoutes,
 } from './controller/defaultRoutes';
-export type { MessageStructure, NextF } from './controller/types';
-export { type Dictionary, setupI18n } from './i18n/setup';
 
 export { initializeBot } from './core/botSetup';

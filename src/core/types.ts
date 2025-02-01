@@ -7,7 +7,6 @@ import {
   NextF,
 } from 'controller/types';
 import { InitializeI18n, I18n } from 'i18n/setup';
-import { UserStateService } from 'service/userStateService';
 import { defaultRoutes } from '../controller/defaultRoutes';
 import { StorageRepository } from 'repository/storage';
 import { goBackProcessor } from 'controller/controllers';
@@ -55,6 +54,31 @@ export type Message = {
   from: {
     id?: number;
   };
+};
+
+export type UserStateService<AvailableRoutes extends string = string> = {
+  clearUserStorage(): Promise<void>;
+  getUserStates(): Promise<AvailableRoutes[]>;
+  getUserCurrentState(): Promise<AvailableRoutes | null>;
+  getUserPreviousState(): Promise<AvailableRoutes | null>;
+  getUserPreviousAndCurrentStates(): Promise<(AvailableRoutes | undefined)[]>;
+  getUserStateData(state: AvailableRoutes): Promise<Record<string, unknown>>;
+  addUserState(state: AvailableRoutes): Promise<number | undefined>;
+  addUserStateData(
+    state: AvailableRoutes,
+    data: Record<string, unknown>
+  ): Promise<number>;
+  deleteUserCurrentState(): Promise<AvailableRoutes | null>;
+  deleteUserStates(): Promise<number>;
+  deleteUserStateData(state: string): Promise<number>;
+  deleteUserStatesData(): Promise<void>;
+  getUserResendFlag(): Promise<boolean>;
+  setUserResendFlag(resend?: boolean): Promise<void>;
+  deleteUserResendFlag(): Promise<number>;
+  getUserMessageStructures(): Promise<ResultMessageStructure[]>;
+  setUserMessageStructures(
+    messageStructures: ResultMessageStructure[]
+  ): Promise<void>;
 };
 
 export type MutualControllerConstructedParams<

@@ -1,4 +1,5 @@
 import { ResultMessageStructure } from 'controller/types';
+import { UserStateService } from 'core/types';
 import { getAllValues } from 'lib/objects';
 import { StorageRepository } from 'repository/storage';
 
@@ -43,31 +44,6 @@ export function makeUsersStateService<AvailableRoutes extends string = string>(
     },
   } as const;
 }
-
-export type UserStateService<AvailableRoutes extends string = string> = {
-  clearUserStorage(): Promise<void>;
-  getUserStates(): Promise<AvailableRoutes[]>;
-  getUserCurrentState(): Promise<AvailableRoutes | null>;
-  getUserPreviousState(): Promise<AvailableRoutes | null>;
-  getUserPreviousAndCurrentStates(): Promise<(AvailableRoutes | undefined)[]>;
-  getUserStateData(state: AvailableRoutes): Promise<Record<string, unknown>>;
-  addUserState(state: AvailableRoutes): Promise<number | undefined>;
-  addUserStateData(
-    state: AvailableRoutes,
-    data: Record<string, unknown>
-  ): Promise<number>;
-  deleteUserCurrentState(): Promise<AvailableRoutes | null>;
-  deleteUserStates(): Promise<number>;
-  deleteUserStateData(state: string): Promise<number>;
-  deleteUserStatesData(): Promise<void>;
-  getUserResendFlag(): Promise<boolean>;
-  setUserResendFlag(resend?: boolean): Promise<void>;
-  deleteUserResendFlag(): Promise<number>;
-  getUserMessageStructures(): Promise<ResultMessageStructure[]>;
-  setUserMessageStructures(
-    messageStructures: ResultMessageStructure[]
-  ): Promise<void>;
-};
 
 export default function makeUserStateService<
   AvailableRoutes extends string = string
@@ -179,7 +155,6 @@ export default function makeUserStateService<
     deleteUserStatesData: async (): Promise<void> => {
       storage.delete(baseKeys.stateData(chatId));
     },
-
 
     // Resend flag
     getUserResendFlag: async (): Promise<boolean> => {
