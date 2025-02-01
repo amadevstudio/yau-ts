@@ -1,5 +1,4 @@
 import makeUserStateService, {
-  UserStateService,
 } from './../service/userStateService';
 import {
   TeleBot,
@@ -15,6 +14,7 @@ import {
   RenderParams,
   RenderToChatCurried,
   Routes,
+  UserStateService,
 } from 'core/types';
 import { StorageRepository } from 'repository/storage';
 
