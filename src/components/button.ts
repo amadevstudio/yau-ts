@@ -1,4 +1,4 @@
-import { MarkupButton } from '@framework/controller/types';
+import { InlineMarkupButton } from '@framework/controller/types';
 
 export function buildInlineMarkupButton<
   AvailableRoutes extends string,
@@ -7,7 +7,7 @@ export function buildInlineMarkupButton<
   type: AvailableRoutes | AvailableActions,
   text: string,
   data?: Record<string, unknown>
-): MarkupButton<AvailableRoutes, AvailableActions> {
+): InlineMarkupButton<AvailableRoutes, AvailableActions> {
   if (data === undefined) {
     data = {};
   }

@@ -1,10 +1,37 @@
 import { constructParams } from '@framework/core/methodParams';
 import { ConstructedServiceParams } from '@framework/core/types';
-import { DefaultRouteNames, defaultRouteNamesMap } from './defaultRoutes';
+import { defaultRouteNamesMap } from './defaultRoutes';
 
-export async function correctEmptyStateInputState(d: ConstructedServiceParams) {
+function devLog<
+  AvailableRoutes extends string,
+  AvailableActions extends string,
+  AvailableLanguages extends string
+>(
+  d: ConstructedServiceParams<
+    AvailableRoutes,
+    AvailableActions,
+    AvailableLanguages
+  >,
+  ...params: unknown[]
+) {
+  if (d.botConfig.environment === 'development') {
+    d.libParams.ctx.$frameworkLogger.debug(params);
+  }
+}
+
+export async function correctEmptyStateInputState<
+  AvailableRoutes extends string,
+  AvailableActions extends string,
+  AvailableLanguages extends string
+>(
+  d: ConstructedServiceParams<
+    AvailableRoutes,
+    AvailableActions,
+    AvailableLanguages
+  >
+) {
   const [prev, curr] =
-    (await d.services.userStateService.getUserPreviousAndCurrentStates()) as DefaultRouteNames[];
+    (await d.services.userStateService.getUserPreviousAndCurrentStates()) as AvailableRoutes[];
   if (prev === undefined) {
     return;
   }
@@ -27,31 +54,38 @@ export async function correctEmptyStateInputState(d: ConstructedServiceParams) {
     (d.routes[prev]?.waitsForInput || someoneHasStateForInput) &&
     curr === defaultRouteNamesMap.$empty
   ) {
-    if (d.botConfig.environment === 'development') {
-      d.libParams.ctx.$frameworkLogger.debug(
-        `States before state correction`,
-        await d.services.userStateService.getUserStates()
-      );
-    }
+    devLog(
+      d,
+      `States before state correction`,
+      await d.services.userStateService.getUserStates()
+    );
 
     await d.services.userStateService.deleteUserCurrentState();
 
-    if (d.botConfig.environment === 'development') {
-      d.libParams.ctx.$frameworkLogger.debug(
-        `States after state correction`,
-        await d.services.userStateService.getUserStates()
-      );
-    }
-  }
-}
-
-export async function goBackProcessor(d: ConstructedServiceParams) {
-  if (d.botConfig.environment === 'development') {
-    d.libParams.ctx.$frameworkLogger.debug(
-      `States before goBack`,
+    devLog(
+      d,
+      `States after state correction`,
       await d.services.userStateService.getUserStates()
     );
   }
+}
+
+export async function goBackProcessor<
+  AvailableRoutes extends string,
+  AvailableActions extends string,
+  AvailableLanguages extends string
+>(
+  d: ConstructedServiceParams<
+    AvailableRoutes,
+    AvailableActions,
+    AvailableLanguages
+  >
+) {
+  devLog(
+    d,
+    `States before goBack`,
+    await d.services.userStateService.getUserStates()
+  );
 
   const prev = await d.services.userStateService.getUserPreviousState();
 
@@ -71,7 +105,11 @@ export async function goBackProcessor(d: ConstructedServiceParams) {
 
   // Run the method
   method(
-    await constructParams({
+    await constructParams<
+      AvailableRoutes,
+      AvailableActions,
+      AvailableLanguages
+    >({
       bot: d.bot,
       routeName: activePrev,
       botConfig: d.botConfig,
@@ -83,6 +121,12 @@ export async function goBackProcessor(d: ConstructedServiceParams) {
 
   // Clean state to new current
   const allStates = await d.services.userStateService.getUserStates();
+  devLog(
+    d,
+    `Active prev route is ${activePrev}. States after route launch`,
+    allStates
+  );
+
   for (const state of allStates.reverse()) {
     if (state === activePrev) {
       break;
@@ -95,10 +139,9 @@ export async function goBackProcessor(d: ConstructedServiceParams) {
     await d.services.userStateService.deleteUserStateData(childRoute);
   }
 
-  if (d.botConfig.environment === 'development') {
-    d.libParams.ctx.$frameworkLogger.debug(
-      `States after goBack`,
-      await d.services.userStateService.getUserStates()
-    );
-  }
+  devLog(
+    d,
+    `States after goBack`,
+    await d.services.userStateService.getUserStates()
+  );
 }

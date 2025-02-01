@@ -7,7 +7,11 @@ import {
   Route,
   typeFieldName,
 } from '@framework/core/types';
-import { TeleBot, TeleContext } from '@framework/controller/types';
+import {
+  FrameworkGenerics,
+  TeleBot,
+  TeleContext,
+} from '@framework/controller/types';
 import {
   constructParams,
   constructServiceParams,
@@ -32,20 +36,42 @@ import { goBackType } from '@framework/components/goBack';
 import { escapeSpecialCharacters } from '@framework/toolbox/regex';
 
 // Curry service controllers
-function makeServiceProcessQuery(
+function makeServiceProcessQuery<
+  AvailableRoutes extends string,
+  AvailableActions extends string,
+  AvailableLanguages extends string
+>(
   bot: TeleBot,
-  botConfig: BotConfig,
+  botConfig: BotConfig<{
+    AR: AvailableRoutes;
+    AA: AvailableActions;
+    AL: AvailableLanguages;
+  }>,
   storage: StorageRepository
 ) {
   return async function (
     processor:
-      | ((serviceParams: ConstructedServiceParams) => Promise<void>)
       | ((
-          serviceParams: ConstructedServiceParams
+          serviceParams: ConstructedServiceParams<
+            AvailableRoutes,
+            AvailableActions,
+            AvailableLanguages
+          >
+        ) => Promise<void>)
+      | ((
+          serviceParams: ConstructedServiceParams<
+            AvailableRoutes,
+            AvailableActions,
+            AvailableLanguages
+          >
         ) => Promise<boolean | undefined>),
     libParams: LibParams
   ) {
-    const csp = constructServiceParams({
+    const csp = constructServiceParams<
+      AvailableRoutes,
+      AvailableActions,
+      AvailableLanguages
+    >({
       bot,
       botConfig,
       libParams,
@@ -60,10 +86,30 @@ function operable() {
   return true;
 }
 
+type serviceProcessQuery<
+  AvailableRoutes extends string,
+  AvailableActions extends string,
+  AvailableLanguages extends string
+> = ReturnType<
+  typeof makeServiceProcessQuery<
+    AvailableRoutes,
+    AvailableActions,
+    AvailableLanguages
+  >
+>;
+
 // Init service controllers
-function serviceControllers(
+function serviceControllers<
+  AvailableRoutes extends string,
+  AvailableActions extends string,
+  AvailableLanguages extends string
+>(
   bot: TeleBot,
-  serviceProcessQuery: ReturnType<typeof makeServiceProcessQuery>
+  serviceProcessQuery: serviceProcessQuery<
+    AvailableRoutes,
+    AvailableActions,
+    AvailableLanguages
+  >
 ) {
   // GoBack module
   bot.callbackQuery(
@@ -84,21 +130,26 @@ function serviceControllers(
 }
 
 // Curry controllers
-function makeProcessQuery(
+function makeProcessQuery<
+  AvailableRoutes extends string,
+  AvailableActions extends string,
+  AvailableLanguages extends string
+>(
   bot: TeleBot,
-  routeName: string,
-  routeParams: Route,
-  botConfig: BotConfig,
+  routeName: AvailableRoutes,
+  routeParams: Route<AvailableRoutes, AvailableActions, AvailableLanguages>,
+  botConfig: BotConfig<{
+    AR: AvailableRoutes;
+    AA: AvailableActions;
+    AL: AvailableLanguages;
+  }>,
   storage: StorageRepository
 ) {
-  const actions = Object.values(botConfig.routes).flatMap((route) =>
-    route?.actions ? Object.keys(route?.actions) : []
-  );
-
   return async function (libParams: LibParams) {
     const cp = await constructParams<
-      keyof typeof botConfig.routes,
-      (typeof actions)[number]
+      AvailableRoutes,
+      AvailableActions,
+      AvailableLanguages
     >({
       bot,
       routeName,
@@ -108,13 +159,16 @@ function makeProcessQuery(
     });
 
     // If step forward, delete state data
+    // !!! STATE MODIFICATION
     if (cp.isStepForward && cp.routeName !== undefined) {
       await cp.services.userStateService.deleteUserStateData(cp.routeName);
     }
 
+    // !!! STATE MODIFICATION
     if (cp.callback === undefined && cp.message !== undefined) {
       // Clear state on commands and set parent state as default route
       if (cp.isCommand) {
+        console.log('CLEARING STORAGE`');
         await cp.services.userStateService.clearUserStorage();
         // But if start, ignore (can't go back from start)
         if (cp.routeName !== 'start') {
@@ -123,8 +177,6 @@ function makeProcessQuery(
           );
         }
       }
-      // Set resend on message
-      await cp.services.userStateService.setUserResendFlag();
     }
 
     // ---
@@ -153,22 +205,27 @@ function makeProcessQuery(
   };
 }
 
-function makeProcessAction(
+function makeProcessAction<
+  AvailableRoutes extends string,
+  AvailableActions extends string,
+  AvailableLanguages extends string
+>(
   bot: TeleBot,
-  routeName: string,
-  routeParams: Route,
-  actionName: string,
-  botConfig: BotConfig,
+  routeName: AvailableRoutes,
+  routeParams: Route<AvailableRoutes, AvailableActions, AvailableLanguages>,
+  actionName: AvailableActions,
+  botConfig: BotConfig<{
+    AR: AvailableRoutes;
+    AA: AvailableActions;
+    AL: AvailableLanguages;
+  }>,
   storage: StorageRepository
 ) {
-  const actions = Object.values(botConfig.routes).flatMap((route) =>
-    route?.actions ? Object.keys(route?.actions) : []
-  );
-
   return async function (libParams: LibParams) {
     const cp = await constructParams<
-      keyof typeof botConfig.routes,
-      (typeof actions)[number]
+      AvailableRoutes,
+      AvailableActions,
+      AvailableLanguages
     >({
       bot,
       routeName,
@@ -183,13 +240,21 @@ function makeProcessAction(
 }
 
 // Register all routes
-async function initializeRoutes({
+async function initializeRoutes<
+  AvailableRoutes extends string,
+  AvailableActions extends string,
+  AvailableLanguages extends string
+>({
   bot,
   botConfig,
   storage,
 }: {
   bot: TeleBot;
-  botConfig: BotConfig;
+  botConfig: BotConfig<{
+    AR: AvailableRoutes;
+    AA: AvailableActions;
+    AL: AvailableLanguages;
+  }>;
   storage: StorageRepository;
 }) {
   const shouldProcess = operable();
@@ -201,31 +266,38 @@ async function initializeRoutes({
   // Service middlewares
   setupServiceMiddlewares(bot, storage, botConfig);
   // Custom middlewares
-  setupCustomMiddlewares(bot, botConfig.middlewares ?? []);
+  setupCustomMiddlewares({
+    bot,
+    customMiddlewares: botConfig.middlewares ?? [],
+    storage,
+  });
   // Catch middleware errors
   catchMiddlewaresError(bot);
 
-  const serviceProcessQuery = makeServiceProcessQuery(bot, botConfig, storage);
+  const serviceProcessQuery = makeServiceProcessQuery<
+    AvailableRoutes,
+    AvailableActions,
+    AvailableLanguages
+  >(bot, botConfig, storage);
   serviceControllers(bot, serviceProcessQuery);
-
-  type AvailableRoutes = keyof typeof botConfig.routes;
 
   const usersStateService = makeUsersStateService<AvailableRoutes>(storage);
 
   // Initialize routes
-  for (const [routeName, routeParams] of Object.entries(botConfig.routes)) {
+  for (const [routeName, routeParams] of Object.entries(botConfig.routes) as [
+    AvailableRoutes,
+    Route<AvailableRoutes, AvailableActions, AvailableLanguages>
+  ][]) {
     // System routes
     if (routeParams === null) {
       continue;
     }
 
-    const processQuery = makeProcessQuery(
-      bot,
-      routeName,
-      routeParams,
-      botConfig,
-      storage
-    );
+    const processQuery = makeProcessQuery<
+      AvailableRoutes,
+      AvailableActions,
+      AvailableLanguages
+    >(bot, routeName, routeParams, botConfig, storage);
 
     // Command section
     if (routeParams.availableFrom.includes('command')) {
@@ -253,9 +325,10 @@ async function initializeRoutes({
           // If status is 'empty' and previous waits for text, "goBack" to previously and process
           await serviceProcessQuery(correctEmptyStateInputState, {
             ctx,
+            isMessage: true,
           } as LibParams);
 
-          await processQuery({ ctx } as LibParams);
+          await processQuery({ ctx, isMessage: true } as LibParams);
         }
       });
     }
@@ -270,7 +343,7 @@ async function initializeRoutes({
           )}":"${escapeSpecialCharacters(routeName)}"`
         ),
         async (ctx) => {
-          await processQuery({ ctx } as LibParams);
+          await processQuery({ ctx, isCallback: true } as LibParams);
           await ctx.answerCallbackQuery();
         }
       );
@@ -279,14 +352,11 @@ async function initializeRoutes({
     // Actions section (in-state actions)
     if (routeParams.actions) {
       for (const actionName in routeParams.actions) {
-        const processAction = makeProcessAction(
-          bot,
-          routeName,
-          routeParams,
-          actionName,
-          botConfig,
-          storage
-        );
+        const processAction = makeProcessAction<
+          AvailableRoutes,
+          AvailableActions,
+          AvailableLanguages
+        >(bot, routeName, routeParams, actionName, botConfig, storage);
         const validateAction = initializeValidateAction(
           routeName,
           routeParams,
@@ -303,7 +373,11 @@ async function initializeRoutes({
           ),
           async (ctx) => {
             if (await validateAction(ctx.callbackQuery)) {
-              await processAction({ ctx } as LibParams);
+              await processAction({
+                ctx,
+                isCallback: true,
+                isAction: true,
+              } as LibParams);
             }
             await ctx.answerCallbackQuery();
           }
@@ -314,10 +388,10 @@ async function initializeRoutes({
 }
 
 // Framework entrypoint
-export default async function initializeBot(
+export default async function initializeBot<G extends FrameworkGenerics>(
   token: string,
   storageUrl: string,
-  botConfig: BotConfig
+  botConfig: BotConfig<G>
 ) {
   const augmentedBotConfig = {
     testTelegram: false,

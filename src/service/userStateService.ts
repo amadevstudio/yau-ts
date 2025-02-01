@@ -44,9 +44,37 @@ export function makeUsersStateService<AvailableRoutes extends string = string>(
   } as const;
 }
 
+export type UserStateService<AvailableRoutes extends string> = {
+  clearUserStorage(): Promise<void>;
+  getUserStates(): Promise<AvailableRoutes[]>;
+  getUserCurrentState(): Promise<AvailableRoutes | null>;
+  getUserPreviousState(): Promise<AvailableRoutes | null>;
+  getUserPreviousAndCurrentStates(): Promise<(AvailableRoutes | undefined)[]>;
+  getUserStateData(state: AvailableRoutes): Promise<Record<string, unknown>>;
+  addUserState(state: AvailableRoutes): Promise<number | undefined>;
+  addUserStateData(
+    state: AvailableRoutes,
+    data: Record<string, unknown>
+  ): Promise<number>;
+  deleteUserCurrentState(): Promise<AvailableRoutes | null>;
+  deleteUserStates(): Promise<number>;
+  deleteUserStateData(state: string): Promise<number>;
+  deleteUserStatesData(): Promise<void>;
+  getUserResendFlag(): Promise<boolean>;
+  setUserResendFlag(resend?: boolean): Promise<void>;
+  deleteUserResendFlag(): Promise<number>;
+  getUserMessageStructures(): Promise<ResultMessageStructure[]>;
+  setUserMessageStructures(
+    messageStructures: ResultMessageStructure[]
+  ): Promise<void>;
+};
+
 export default function makeUserStateService<
   AvailableRoutes extends string = string
->(storage: StorageRepository, chatId: number) {
+>(
+  storage: StorageRepository,
+  chatId: number
+): UserStateService<AvailableRoutes> {
   const getUserCurrentState = async (): Promise<AvailableRoutes | null> => {
     return storage.lindex(
       baseKeys.states(chatId),
@@ -110,7 +138,9 @@ export default function makeUserStateService<
 
     // User state, setters
 
-    addUserState: async (state: AvailableRoutes): Promise<number | undefined> => {
+    addUserState: async (
+      state: AvailableRoutes
+    ): Promise<number | undefined> => {
       const curr = await getUserCurrentState();
       if (curr === state) {
         return;
@@ -145,6 +175,11 @@ export default function makeUserStateService<
     deleteUserStateData: async (state: string): Promise<number> => {
       return storage.hdel(baseKeys.stateData(chatId), state);
     },
+
+    deleteUserStatesData: async (): Promise<void> => {
+      storage.delete(baseKeys.stateData(chatId));
+    },
+
 
     // Resend flag
     getUserResendFlag: async (): Promise<boolean> => {
@@ -190,4 +225,4 @@ export default function makeUserStateService<
 }
 
 export type UsersStateService = ReturnType<typeof makeUsersStateService>;
-export type UserStateService = ReturnType<typeof makeUserStateService>;
+// export type UserStateService = ReturnType<typeof makeUserStateService>;

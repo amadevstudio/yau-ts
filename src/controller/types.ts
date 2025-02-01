@@ -1,6 +1,22 @@
 import { FrameworkLogger } from '@framework/toolbox/logger';
 import { Bot, Context, GrammyError, HttpError, NextFunction } from 'grammy';
-import { CallbackQuery, InlineKeyboardButton, Message } from 'grammy/types';
+import {
+  CallbackQuery,
+  InlineKeyboardButton,
+  KeyboardButton,
+  KeyboardButtonPollType,
+  KeyboardButtonRequestChat,
+  KeyboardButtonRequestUsers,
+  Message,
+  ReplyKeyboardMarkup,
+  WebAppInfo,
+} from 'grammy/types';
+
+export type FrameworkGenerics = {
+  AR: string; // AvailableRoutes
+  AA: string; // AvailableActions
+  AL: string; // AvailableLanguages
+}
 
 export class TeleBot extends Bot {}
 export type TeleContextBare = Context;
@@ -12,7 +28,13 @@ export const LibraryError = GrammyError;
 export const LibraryHttpError = HttpError;
 export type TeleMessage = Message;
 export type TeleCallback = CallbackQuery;
+export type TeleKeyboardButton = KeyboardButton;
+export type TeleKeyboardMarkup = ReplyKeyboardMarkup;
 export type TeleInlineKeyboardButton = InlineKeyboardButton;
+export type TeleKeyboardButtonRequestUsers = KeyboardButtonRequestUsers;
+export type TeleKeyboardButtonRequestChat = KeyboardButtonRequestChat;
+export type TeleKeyboardButtonPollType = KeyboardButtonPollType;
+export type TeleWebAppInfo = WebAppInfo;
 
 type MessageTypes = 'text'; // TODO: 'image' | 'audio' ...
 export type ButtonData<
@@ -21,7 +43,7 @@ export type ButtonData<
 > = {
   $tp?: AvailableRoutes | AvailableActions;
 };
-export type MarkupButton<
+export type InlineMarkupButton<
   AvailableRoutes extends string = string,
   AvailableActions extends string = string
 > = {
@@ -30,16 +52,29 @@ export type MarkupButton<
     [key in string]: string | number | null;
   } & ButtonData<AvailableRoutes, AvailableActions>;
 };
+
+export type ReplyKeyboardButton = {
+  text: string;
+  request_users: TeleKeyboardButtonRequestUsers;
+  request_chat: TeleKeyboardButtonRequestChat;
+  request_contact: boolean;
+  request_location: boolean;
+  request_poll: TeleKeyboardButtonPollType;
+  web_app: TeleWebAppInfo;
+};
+
 type BaseMessageStructure<
   AvailableRoutes extends string,
   AvailableActions extends string
 > = {
   type: MessageTypes;
   // TODO: add more types
-  inlineMarkup?: MarkupButton<AvailableRoutes, AvailableActions>[][];
+  inlineMarkup?: InlineMarkupButton<AvailableRoutes, AvailableActions>[][];
+  replyMarkup?: TeleKeyboardButton[][];
   parseMode?: 'MarkdownV2' | 'HTML';
   disableWebPagePreview?: boolean;
 };
+
 type TextStructure<
   AvailableRoutes extends string,
   AvailableActions extends string

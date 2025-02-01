@@ -5,12 +5,20 @@ import { BotConfig } from '@framework/core/types';
 
 export const goBackType = defaultActionNamesMap.$back;
 
-export default function makeGoBack({
-  getDefaultText: getDefaultText,
+export default function makeGoBack<
+  AvailableRoutes extends string,
+  AvailableActions extends string,
+  AvailableLanguages extends string
+>({
+  getDefaultText,
   i18n,
 }: {
-  getDefaultText?: BotConfig['defaultTextGetters']['goBack'];
-  i18n: I18n;
+  getDefaultText?: BotConfig<{
+    AR: AvailableRoutes;
+    AA: AvailableActions;
+    AL: AvailableLanguages;
+  }>['defaultTextGetters']['goBack'];
+  i18n: I18n<AvailableLanguages>;
 }) {
   const defaultText = getDefaultText
     ? getDefaultText(i18n.languageCode)

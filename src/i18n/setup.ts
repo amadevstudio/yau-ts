@@ -43,11 +43,13 @@ type NumeralDict<Languages extends string> = {
 export type Dictionary<
   ProjectAvailableLanguages extends string = DefaultAvailableLanguages
 > = {
-  [key: string]: Dictionary<ProjectAvailableLanguages> | {
-    s?: LangDict<ProjectAvailableLanguages>;
-  } & {
-    n?: NumeralDict<ProjectAvailableLanguages>;
-  };
+  [key: string]:
+    | Dictionary<ProjectAvailableLanguages>
+    | ({
+        s?: LangDict<ProjectAvailableLanguages>;
+      } & {
+        n?: NumeralDict<ProjectAvailableLanguages>;
+      });
 };
 
 const FinalTranslationMapSchema = z.record(z.string(), z.string());
@@ -107,7 +109,9 @@ export default function setupI18n<
           let currMap: { [k: string]: string } | undefined = undefined;
           for (const k of id) {
             if (!FinalTranslationMapSchema.safeParse(dictionary[k]).success) {
-              currMap = (currMap ?? dictionary)[k] as unknown as { [k: string]: string };
+              currMap = (currMap ?? dictionary)[k] as unknown as {
+                [k: string]: string;
+              };
             }
           }
 
@@ -176,11 +180,11 @@ const fallbackT = (id: string[]) => {
   return id.join('.');
 };
 
-export function initializeI18n(
+export function initializeI18n<AvailableLanguages extends string>(
   i18n: InitializeI18n | undefined,
   frameworkLogger: FrameworkLogger,
-  languageCode: string
-): I18n {
+  languageCode: AvailableLanguages
+): I18n<AvailableLanguages> {
   return {
     t: i18n === undefined ? fallbackT : i18n.t(frameworkLogger, languageCode),
     languageCode: languageCode,
@@ -194,7 +198,7 @@ export type InitializeI18n = {
   ) => (id: string[], params?: { num?: number; vars?: string[] }) => string;
 };
 
-export type I18n = {
+export type I18n<AvailableLanguages extends string> = {
   t: (id: string[], params?: { num?: number; vars?: string[] }) => string;
-  languageCode: string;
+  languageCode: AvailableLanguages;
 };

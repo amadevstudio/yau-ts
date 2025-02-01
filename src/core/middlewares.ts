@@ -6,29 +6,34 @@ import {
   LibraryHttpError,
 } from '@framework/controller/types';
 import { StorageRepository } from '@framework/repository/storage';
-import makeUserStateService from '@framework/service/userStateService';
 import initializeLogger from '@framework/toolbox/logger';
 import { BotConfig, CustomMiddleware } from './types';
 import { buildMiddlewareParams } from './methodParams';
 import { LibraryError } from '../controller/types';
 
-export function setupServiceMiddlewares(
+export function setupServiceMiddlewares<
+  AvailableRoutes extends string,
+  AvailableActions extends string,
+  AvailableLanguages extends string
+>(
   bot: TeleBot,
   storage: StorageRepository,
-  botConfig: BotConfig
+  botConfig: BotConfig<{AR: AvailableRoutes, AA: AvailableActions, AL: AvailableLanguages}>
 ) {
+  const makeMiddlewareParams = (ctx: TeleContext) =>
+    buildMiddlewareParams({ ctx, storage });
+
+  // Inject logger to the context
   async function injectLogger(ctx: TeleContext, next: NextF): Promise<void> {
     ctx.$frameworkLogger = initializeLogger();
     await next();
   }
-
   bot.use(injectLogger as (ctx: TeleContextBare, next: NextF) => Promise<void>);
 
+  // Log states in development
   async function logStates(ctx: TeleContext, next: NextF): Promise<void> {
-    const chatId = ctx.chat?.id;
-
     const userStateService =
-      chatId !== undefined ? makeUserStateService(storage, chatId) : undefined;
+      makeMiddlewareParams(ctx).services.userStateService;
 
     if (userStateService) {
       ctx.$frameworkLogger.debug(
@@ -46,23 +51,27 @@ export function setupServiceMiddlewares(
       );
     }
   }
-
   if (botConfig.environment === 'development') {
     bot.use(logStates as (ctx: TeleContextBare, next: NextF) => Promise<void>);
   }
 }
 
-export function setupCustomMiddlewares(
-  bot: TeleBot,
-  customMiddlewares: CustomMiddleware[]
-) {
+export function setupCustomMiddlewares<AvailableRoutes extends string>({
+  bot,
+  customMiddlewares,
+  storage,
+}: {
+  bot: TeleBot;
+  customMiddlewares: CustomMiddleware<AvailableRoutes>[];
+  storage: StorageRepository;
+}) {
   for (const middleware of customMiddlewares) {
     async function processMiddleware(
       ctx: TeleContext,
       next: NextF
     ): Promise<void> {
       try {
-        await middleware(buildMiddlewareParams(ctx), next);
+        await middleware(buildMiddlewareParams({ ctx, storage }), next);
       } catch (err) {
         ctx.$frameworkLogger.error(
           `Error in custom middleware: ${middleware}:`,

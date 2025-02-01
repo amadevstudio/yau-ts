@@ -4,6 +4,10 @@ import { UsersStateService } from '@framework/service/userStateService';
 import { Route } from './types';
 import { defaultActionNamesMap } from '@framework/controller/defaultRoutes';
 
+export function validateCommand(msg: string) {
+  return msg[0] === '/';
+}
+
 export function validateGoBack(callback: TeleCallback) {
   return getCallbackType(callback) === defaultActionNamesMap.$back;
 }
@@ -32,7 +36,6 @@ export function initializeValidateAction<
   actionName: AvailableActions,
   usersStateService: UsersStateService
 ) {
-
   return async function (callback: TeleCallback) {
     // TODO: get chat id without message?
     if (callback.message?.chat.id === undefined) {
@@ -41,11 +44,11 @@ export function initializeValidateAction<
 
     return (
       // Current state
-      ((await usersStateService.getUserCurrentState(
+      (await usersStateService.getUserCurrentState(
         callback.message?.chat.id
       )) === routeName ||
-        // or state independent action
-        routeParams.actions?.[actionName]?.stateIndependent === true)
+      // or state independent action
+      routeParams.actions?.[actionName]?.stateIndependent === true
     );
   };
 }
