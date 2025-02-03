@@ -41,6 +41,7 @@ You don't need to know the details of the state or the telegram. You just need t
 ### Planned features
 
 - automate media caching;
+- state caching based on callback data;
 - menus, pagination;
 - ability to send big files;
 - and many more.
