@@ -238,7 +238,7 @@ async function initializeRoutes({
         usersStateService
       );
 
-      bot.on(':text', async (ctx) => {
+      bot.on('message', async (ctx) => {
         if (ctx.message !== undefined && (await validateMessage(ctx.message))) {
           // If status is 'empty' and previous waits for text, "goBack" to previously and process
           await serviceProcessQuery(correctEmptyStateInputState, {
