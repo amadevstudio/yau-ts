@@ -2,7 +2,7 @@ import { Logger } from 'tslog';
 import { randomBytes } from 'crypto';
 
 export function generateRandomId(length: number = 16): string {
-  return randomBytes(length).toString('hex'); // Generates a random hex string
+  return `${Date.now()}_${randomBytes(length).toString('hex').slice(2, 9)}`;
 }
 
 class CustomLogger {
@@ -29,7 +29,10 @@ class CustomLogger {
     try {
       this.logger.error(`[${this.randomId}]`, ...args);
     } catch {
-      this.logger.error(`[${this.randomId}]`, ...(args.map(a => a instanceof Error ? new Error(String(a)) : a)));
+      this.logger.error(
+        `[${this.randomId}]`,
+        ...args.map((a) => (a instanceof Error ? new Error(String(a)) : a))
+      );
     }
   }
 
@@ -42,5 +45,5 @@ export type FrameworkLogger = CustomLogger;
 
 export default function initializeLogger(): FrameworkLogger {
   const randomId = generateRandomId();
-  return new CustomLogger(randomId ?? "");
+  return new CustomLogger(randomId ?? '');
 }
