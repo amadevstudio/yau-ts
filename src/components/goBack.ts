@@ -1,5 +1,5 @@
 import { defaultActionNamesMap } from 'controller/defaultRoutes';
-import { I18n } from '../i18n/setup';
+import { I18n } from 'i18n/types';
 import { buildInlineMarkupButton } from './button';
 import { BotConfig } from 'core/types';
 

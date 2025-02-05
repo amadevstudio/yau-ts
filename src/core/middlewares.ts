@@ -3,13 +3,13 @@ import {
   TeleContext,
   NextF,
   TeleContextBare,
-  LibraryHttpError,
-} from 'controller/types';
-import { StorageRepository } from 'repository/storage';
+  LibraryHttpError
+} from './types';
+import { StorageRepository } from 'repository/storageTypes';
 import initializeLogger from 'toolbox/logger';
 import { BotConfig, CustomMiddleware } from './types';
 import { buildMiddlewareParams } from './methodParams';
-import { LibraryError } from '../controller/types';
+import { LibraryError } from './types';
 
 export function setupServiceMiddlewares<
   AvailableRoutes extends string,

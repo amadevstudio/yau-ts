@@ -11,15 +11,15 @@ import {
   TeleBot,
   TeleCallback,
   TeleContext,
-  TeleMessage,
-} from 'controller/types';
+  TeleMessage
+} from './types';
 import {
   makeRender,
   makeRenderToChat,
   makeOuterSender,
 } from 'controller/render';
 import { initializeI18n } from 'i18n/setup';
-import { StorageRepository } from 'repository/storage';
+import { StorageRepository } from 'repository/storageTypes';
 import { getUnitedData } from 'service/stateDataService';
 import { goBackProcessor } from 'controller/controllers';
 import makeGoBack from 'components/goBack';
@@ -131,18 +131,6 @@ export async function constructParams<
 }): Promise<ControllerConstructedParams<G>> {
   const { message, callback } = separateMessageAndCallback(libParams);
 
-  const messageData = (msg: TeleMessage | undefined) => {
-    return (
-      msg && {
-        id: msg.message_id,
-        text: msg.text,
-        from: {
-          id: msg.from?.id,
-        },
-      }
-    );
-  };
-
   const mutualParams = buildMutualParams<G>({
     libParams,
     storage,
@@ -165,9 +153,9 @@ export async function constructParams<
   return {
     ...mutualParams,
 
-    message: messageData(message),
+    message: message,
     callback: callback && {
-      message: messageData(callback.message),
+      message: message,
       id: callback?.id,
     },
 

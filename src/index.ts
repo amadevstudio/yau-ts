@@ -7,9 +7,11 @@ export type {
   CustomMiddleware,
   MiddlewareConstructedParams,
   BotConfig,
+  NextF,
+  TeleMessage,
 } from './core/types';
-export type { MessageStructure, NextF } from './controller/types';
-export { type Dictionary } from './i18n/setup';
+export type { MessageStructure } from './controller/types';
+export { type Dictionary } from './i18n/types';
 
 export { setupI18n } from './i18n/setup';
 

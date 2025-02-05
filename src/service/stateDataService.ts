@@ -1,5 +1,6 @@
-import { ButtonData, TeleCallback } from 'controller/types';
-import { UserStateService } from './userStateService';
+import { ButtonData } from 'controller/types';
+import { TeleCallback } from 'core/types';
+import { UserStateService } from 'core/types';
 import { DefaultActionNames } from 'controller/defaultRoutes';
 import { typeFieldName } from 'core/types';
 

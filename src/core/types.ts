@@ -1,15 +1,48 @@
 import {
   MessageStructure,
   ResultMessageStructure,
-  TeleBot,
   InlineMarkupButton,
-  TeleContext,
-  NextF,
 } from 'controller/types';
-import { InitializeI18n, I18n } from 'i18n/setup';
-import { defaultRoutes } from '../controller/defaultRoutes';
-import { StorageRepository } from 'repository/storage';
-import { goBackProcessor } from 'controller/controllers';
+import { Bot, Context, NextFunction, GrammyError, HttpError } from 'grammy';
+import {
+  Message,
+  CallbackQuery,
+  KeyboardButton,
+  ReplyKeyboardMarkup,
+  InlineKeyboardButton,
+  KeyboardButtonRequestUsers,
+  KeyboardButtonRequestChat,
+  KeyboardButtonPollType,
+  WebAppInfo,
+} from 'grammy/types';
+import { InitializeI18n, I18n } from 'i18n/types';
+import { StorageRepository } from 'repository/storageTypes';
+import { FrameworkLogger } from 'toolbox/logger';
+
+export type ConstructedServiceParams = MutualControllerConstructedParams & {
+  bot: TeleBot;
+  botConfig: BotConfig;
+  libParams: LibParams;
+  routes: Routes;
+  storage: StorageRepository;
+};
+export class TeleBot extends Bot {}
+export type TeleContextBare = Context;
+export type TeleContext = TeleContextBare & {
+  $frameworkLogger: FrameworkLogger;
+};
+export type NextF = NextFunction;
+export const LibraryError = GrammyError;
+export const LibraryHttpError = HttpError;
+export interface TeleMessage extends Message {}
+export type TeleCallback = CallbackQuery;
+export type TeleKeyboardButton = KeyboardButton;
+export type TeleKeyboardMarkup = ReplyKeyboardMarkup;
+export type TeleInlineKeyboardButton = InlineKeyboardButton;
+export type TeleKeyboardButtonRequestUsers = KeyboardButtonRequestUsers;
+export type TeleKeyboardButtonRequestChat = KeyboardButtonRequestChat;
+export type TeleKeyboardButtonPollType = KeyboardButtonPollType;
+export type TeleWebAppInfo = WebAppInfo;
 
 export type FrameworkGenerics = {
   AR: string; // AvailableRoutes
@@ -47,14 +80,6 @@ type OuterSenderCurried = (
   chatId: number,
   messages: MessageStructure[]
 ) => Promise<ResultMessageStructure[]>;
-
-export type Message = {
-  id: number;
-  text?: string;
-  from: {
-    id?: number;
-  };
-};
 
 export type UserStateService<AvailableRoutes extends string = string> = {
   clearUserStorage(): Promise<void>;
@@ -114,9 +139,9 @@ export type MiddlewareConstructedParams<
 export type ControllerConstructedParams<
   G extends FrameworkGenerics = FrameworkGenerics
 > = MutualControllerConstructedParams<G> & {
-  message?: Message;
+  message?: TeleMessage;
   callback?: {
-    message?: Message;
+    message?: TeleMessage;
     id: string;
   };
 
@@ -129,7 +154,7 @@ export type ControllerConstructedParams<
   isStepForward: boolean;
   isStepBack: boolean;
 
-  goBackAction: typeof goBackProcessor;
+  goBackAction: (d: ConstructedServiceParams) => void;
 
   render: RenderCurried;
   renderToChat: RenderToChatCurried;
@@ -170,12 +195,14 @@ export type Route<G extends FrameworkGenerics = FrameworkGenerics> = {
   hasReplyKeyboard?: boolean;
 };
 
+export type DefaultRouteNames = '$empty';
+
 export type LocalRoutes<G extends FrameworkGenerics = FrameworkGenerics> = {
   [key in G['AR']]: Route<G>;
 };
 
 export type Routes<G extends FrameworkGenerics = FrameworkGenerics> = {
-  [key in G['AR'] | keyof typeof defaultRoutes]: Route<G> | null;
+  [key in G['AR'] | DefaultRouteNames]: Route<G> | null;
 };
 
 /**
@@ -200,12 +227,4 @@ export type BotConfig<G extends FrameworkGenerics = FrameworkGenerics> = {
 
   testTelegram?: boolean;
   environment?: 'development' | 'production';
-};
-
-export type ConstructedServiceParams = MutualControllerConstructedParams & {
-  bot: TeleBot;
-  botConfig: BotConfig;
-  libParams: LibParams;
-  routes: Routes;
-  storage: StorageRepository;
 };

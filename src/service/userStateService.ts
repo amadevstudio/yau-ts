@@ -1,7 +1,7 @@
 import { ResultMessageStructure } from 'controller/types';
 import { UserStateService } from 'core/types';
 import { getAllValues } from 'lib/objects';
-import { StorageRepository } from 'repository/storage';
+import { StorageRepository } from 'repository/storageTypes';
 
 type StateFunctionChatIdParam = string | number;
 type StateFunction = (chatId: StateFunctionChatIdParam) => string;

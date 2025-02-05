@@ -8,9 +8,10 @@ import {
   Route,
   typeFieldName,
 } from 'core/types';
-import { TeleBot, TeleContext } from 'controller/types';
+import { TeleBot, TeleContext } from './types';
 import { constructParams, constructServiceParams } from 'core/methodParams';
-import initStorage, { StorageRepository } from 'repository/storage';
+import initStorage from 'repository/storage';
+import { StorageRepository } from 'repository/storageTypes';
 import {
   correctEmptyStateInputState,
   goBackProcessor,

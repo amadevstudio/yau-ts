@@ -1,13 +1,14 @@
 import makeUserStateService, {
 } from './../service/userStateService';
 import {
-  TeleBot,
-  TeleMessage,
   MessageStructure,
   ResultMessageStructure,
-  TeleInlineKeyboardButton,
-  TeleKeyboardButton,
 } from 'controller/types';
+import {
+  TeleBot,
+  TeleMessage, TeleInlineKeyboardButton,
+  TeleKeyboardButton
+} from 'core/types';
 import {
   FrameworkGenerics,
   RenderCurried,
@@ -16,7 +17,7 @@ import {
   Routes,
   UserStateService,
 } from 'core/types';
-import { StorageRepository } from 'repository/storage';
+import { StorageRepository } from 'repository/storageTypes';
 
 type MakeRenderBase<
   AvailableRoutes extends string,

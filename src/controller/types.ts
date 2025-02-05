@@ -1,34 +1,11 @@
-import { FrameworkLogger } from 'toolbox/logger';
-import { Bot, Context, GrammyError, HttpError, NextFunction } from 'grammy';
 import {
-  CallbackQuery,
-  InlineKeyboardButton,
-  KeyboardButton,
-  KeyboardButtonPollType,
-  KeyboardButtonRequestChat,
-  KeyboardButtonRequestUsers,
-  Message,
-  ReplyKeyboardMarkup,
-  WebAppInfo,
-} from 'grammy/types';
-
-export class TeleBot extends Bot {}
-export type TeleContextBare = Context;
-export type TeleContext = TeleContextBare & {
-  $frameworkLogger: FrameworkLogger;
-};
-export type NextF = NextFunction;
-export const LibraryError = GrammyError;
-export const LibraryHttpError = HttpError;
-export type TeleMessage = Message;
-export type TeleCallback = CallbackQuery;
-export type TeleKeyboardButton = KeyboardButton;
-export type TeleKeyboardMarkup = ReplyKeyboardMarkup;
-export type TeleInlineKeyboardButton = InlineKeyboardButton;
-export type TeleKeyboardButtonRequestUsers = KeyboardButtonRequestUsers;
-export type TeleKeyboardButtonRequestChat = KeyboardButtonRequestChat;
-export type TeleKeyboardButtonPollType = KeyboardButtonPollType;
-export type TeleWebAppInfo = WebAppInfo;
+  TeleKeyboardButtonRequestUsers,
+  TeleKeyboardButtonRequestChat,
+  TeleKeyboardButtonPollType,
+  TeleWebAppInfo,
+  TeleKeyboardButton,
+  TeleMessage,
+} from 'core/types';
 
 type MessageTypes = 'text'; // TODO: 'image' | 'audio' ...
 export type ButtonData<

@@ -1,4 +1,8 @@
-import { Routes } from 'core/types';
+import { DefaultRouteNames, Routes } from 'core/types';
+
+export const defaultRoutes = {
+  $empty: null,
+} as const;
 
 export function buildEntityNamesMap<AvailableRoutes extends string>(
   entity: readonly AvailableRoutes[]
@@ -32,12 +36,6 @@ export function buildRoutesList<AvailableRoutes extends string>(
 
 // ------
 // Routes
-
-export const defaultRoutes = {
-  $empty: null,
-} as const;
-
-export type DefaultRouteNames = keyof typeof defaultRoutes;
 
 export const defaultRouteNamesMap = buildEntityNamesMap(
   Object.keys(defaultRoutes) as DefaultRouteNames[]

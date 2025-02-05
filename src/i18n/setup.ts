@@ -1,56 +1,15 @@
 import { z } from 'zod';
 import { FrameworkLogger } from 'toolbox/logger';
-
-class TranslationEmpty extends Error {
-  constructor(msg: string) {
-    super(msg);
-
-    // Set the prototype explicitly.
-    Object.setPrototypeOf(this, TranslationEmpty.prototype);
-  }
-}
-
-type DefaultAvailableLanguages = 'en' | 'cn'; // Default available languages
-
-type LangDict<Languages extends string> = {
-  [key: string]: LangDict<Languages> | { [key in Languages]: string };
-};
-
-type Numerals = 'singular' | 'few' | 'many';
-type UniteNumerals = 'unite';
-type Numeral<Languages extends string> = Record<
+import {
+  DefaultAvailableLanguages,
+  Dictionary,
+  I18n,
+  InitializeI18n,
+  NumeralAll,
   Numerals,
-  { [k in Languages]: string }
->;
-type NumeralOptional<Languages extends string> = Record<
-  Numerals,
-  { [k in Languages]?: string }
->;
-type UniteNumeral<Languages extends string> = {
-  [k in UniteNumerals]: {
-    [k in Languages]?: string;
-  };
-};
-
-type NumeralAll<Languages extends string> =
-  | Numeral<Languages>
-  | (UniteNumeral<Languages> & { [k in Numerals]?: never })
-  | (UniteNumeral<Languages> & NumeralOptional<Languages>);
-type NumeralDict<Languages extends string> = {
-  [key: string]: NumeralDict<Languages> | NumeralAll<Languages>;
-};
-
-export type Dictionary<
-  ProjectAvailableLanguages extends string = DefaultAvailableLanguages
-> = {
-  [key: string]:
-    | Dictionary<ProjectAvailableLanguages>
-    | ({
-        s?: LangDict<ProjectAvailableLanguages>;
-      } & {
-        n?: NumeralDict<ProjectAvailableLanguages>;
-      });
-};
+  TranslationEmpty,
+  UniteNumeral,
+} from './types';
 
 const FinalTranslationMapSchema = z.record(z.string(), z.string());
 
@@ -92,9 +51,7 @@ function insertVars(template: string, vars?: string[]) {
   return result;
 }
 
-export function setupI18n<
-  Languages extends string = DefaultAvailableLanguages
->(
+export function setupI18n<Languages extends string = DefaultAvailableLanguages>(
   dictionary: Dictionary<Languages>,
   initialParams: { fallbackLanguageCode?: Languages } = {}
 ): InitializeI18n {
@@ -190,15 +147,3 @@ export function initializeI18n<AvailableLanguages extends string>(
     languageCode: languageCode,
   };
 }
-
-export type InitializeI18n = {
-  t: (
-    frameworkLogger: FrameworkLogger,
-    languageCode: string
-  ) => (id: string[], params?: { num?: number; vars?: string[] }) => string;
-};
-
-export type I18n<AvailableLanguages extends string> = {
-  t: (id: string[], params?: { num?: number; vars?: string[] }) => string;
-  languageCode: AvailableLanguages;
-};

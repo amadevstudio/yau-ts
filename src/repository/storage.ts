@@ -1,4 +1,5 @@
 import { createClient, RedisClientType } from 'redis';
+import { CreateRedisRepository, StorageRepository } from './storageTypes';
 
 // Create a Redis client and connect to the Redis instance
 async function createStorageClient(redisUrl: string): Promise<RedisClientType> {
@@ -8,7 +9,7 @@ async function createStorageClient(redisUrl: string): Promise<RedisClientType> {
 }
 
 // Redis Repository Functions
-const createRedisRepository = (client: RedisClientType) => {
+export const createRedisRepository: CreateRedisRepository = (client) => {
   // // Helper function to convert Buffer to string
   // const bufferToString = (data: Buffer | string | null): string | null => {
   //   if (data instanceof Buffer) {
@@ -95,9 +96,6 @@ const createRedisRepository = (client: RedisClientType) => {
     },
   };
 };
-
-// Type for the Redis Repository
-export type StorageRepository = ReturnType<typeof createRedisRepository>;
 
 // Initialize the Redis Repository
 const initStorage = async (redisUrl: string): Promise<StorageRepository> => {

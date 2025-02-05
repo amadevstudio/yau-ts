@@ -1,4 +1,4 @@
-import { TeleCallback, TeleMessage } from 'controller/types';
+import { TeleCallback, TeleMessage } from './types';
 import { getCallbackType } from 'service/stateDataService';
 import { UsersStateService } from 'service/userStateService';
 import { Route } from './types';
