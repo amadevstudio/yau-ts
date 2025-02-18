@@ -6,9 +6,10 @@ export type {
   Routes,
   CustomMiddleware,
   MiddlewareConstructedParams,
-  BotConfig,
+  InitializeSystemConfig,
   NextF,
   TeleMessage,
+  TeleBot,
 } from './core/types';
 export type { MessageStructure } from './controller/types';
 export { type Dictionary } from './i18n/types';

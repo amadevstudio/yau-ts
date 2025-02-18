@@ -4,6 +4,7 @@ import {
   BotConfig,
   ConstructedServiceParams,
   FrameworkGenerics,
+  InitializeSystemConfig,
   LibParams,
   Route,
   typeFieldName,
@@ -311,7 +312,7 @@ async function initializeRoutes({
 // Framework entrypoint
 export async function initializeBot<
   G extends FrameworkGenerics = FrameworkGenerics
->(token: string, storageUrl: string, botConfig: BotConfig<G>) {
+>(token: string, storageUrl: string, botConfig: InitializeSystemConfig<G>) {
   const augmentedBotConfig = {
     testTelegram: false,
     environment: 'development' as const,
@@ -328,7 +329,19 @@ export async function initializeBot<
 
   const storage = await initStorage(storageUrl);
 
-  await initializeRoutes({ bot, botConfig: augmentedBotConfig, storage });
+  const { routes, middlewares } = botConfig.initializeProject(bot);
+
+  const initializeRoutesConfig = {
+    routes,
+    defaultRoute: botConfig.defaultRoute,
+
+    middlewares,
+
+    i18n: botConfig.i18n,
+    defaultTextGetters: botConfig.defaultTextGetters,
+  };
+
+  await initializeRoutes({ bot, botConfig: initializeRoutesConfig, storage });
 
   return bot;
 }

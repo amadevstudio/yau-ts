@@ -214,6 +214,22 @@ export type CustomMiddleware<AvailableRoutes extends string = string> = (
   next: NextF
 ) => Promise<void>;
 
+export type InitializeSystemConfig<G extends FrameworkGenerics = FrameworkGenerics> = {
+  initializeProject: (bot: TeleBot) => {
+    routes: Routes<G>;
+    middlewares?: CustomMiddleware<G['AR']>[];
+  };
+  defaultRoute: G['AR'];
+
+  i18n?: InitializeI18n;
+  defaultTextGetters?: {
+    goBack: (languageCode: G['AL']) => string;
+  };
+
+  testTelegram?: boolean;
+  environment?: 'development' | 'production';
+};
+
 export type BotConfig<G extends FrameworkGenerics = FrameworkGenerics> = {
   routes: Routes<G>;
   defaultRoute: G['AR'];
@@ -221,10 +237,9 @@ export type BotConfig<G extends FrameworkGenerics = FrameworkGenerics> = {
   middlewares?: CustomMiddleware<G['AR']>[];
 
   i18n?: InitializeI18n;
-  defaultTextGetters: {
+  defaultTextGetters?: {
     goBack: (languageCode: G['AL']) => string;
   };
 
-  testTelegram?: boolean;
   environment?: 'development' | 'production';
 };

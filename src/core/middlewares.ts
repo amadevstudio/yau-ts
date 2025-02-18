@@ -3,11 +3,12 @@ import {
   TeleContext,
   NextF,
   TeleContextBare,
-  LibraryHttpError
+  LibraryHttpError,
+  BotConfig,
 } from './types';
 import { StorageRepository } from 'repository/storageTypes';
 import initializeLogger from 'toolbox/logger';
-import { BotConfig, CustomMiddleware } from './types';
+import { CustomMiddleware } from './types';
 import { buildMiddlewareParams } from './methodParams';
 import { LibraryError } from './types';
 
@@ -18,7 +19,11 @@ export function setupServiceMiddlewares<
 >(
   bot: TeleBot,
   storage: StorageRepository,
-  botConfig: BotConfig<{AR: AvailableRoutes, AA: AvailableActions, AL: AvailableLanguages}>
+  botConfig: BotConfig<{
+    AR: AvailableRoutes;
+    AA: AvailableActions;
+    AL: AvailableLanguages;
+  }>
 ) {
   const makeMiddlewareParams = (ctx: TeleContext) =>
     buildMiddlewareParams({ ctx, storage });
