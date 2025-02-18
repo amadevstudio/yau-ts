@@ -1,3 +1,4 @@
+import { defaultRouteNamesMap } from 'controller/defaultRoutes';
 import { ResultMessageStructure } from 'controller/types';
 import { UserStateService } from 'core/types';
 import { getAllValues } from 'lib/objects';
@@ -123,6 +124,18 @@ export default function makeUserStateService<
       }
 
       return storage.rpush(baseKeys.states(chatId), state);
+    },
+
+    addUserEmptyState: async (): Promise<number | undefined> => {
+      const curr = await getUserCurrentState();
+      if (curr === defaultRouteNamesMap.$empty) {
+        return;
+      }
+
+      return storage.rpush(
+        baseKeys.states(chatId),
+        defaultRouteNamesMap.$empty
+      );
     },
 
     addUserStateData: async (

@@ -92,6 +92,7 @@ export type UserStateService<AvailableRoutes extends string = string> = {
   getUserPreviousAndCurrentStates(): Promise<(AvailableRoutes | undefined)[]>;
   getUserStateData(state: AvailableRoutes): Promise<Record<string, unknown>>;
   addUserState(state: AvailableRoutes): Promise<number | undefined>;
+  addUserEmptyState(): Promise<number | undefined>;
   addUserStateData(
     state: AvailableRoutes,
     data: Record<string, unknown>
