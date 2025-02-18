@@ -9,12 +9,12 @@ export type {
   InitializeSystemConfig,
   NextF,
   TeleMessage,
-  TeleBot,
 } from './core/types';
 export type { MessageStructure } from './controller/types';
 export { type Dictionary } from './i18n/types';
 
 export { setupI18n } from './i18n/setup';
+export { TeleBot, TeleError, TeleErrors } from './core/types';
 
 export {
   buildEntityNamesMap,

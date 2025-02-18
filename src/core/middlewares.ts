@@ -3,14 +3,14 @@ import {
   TeleContext,
   NextF,
   TeleContextBare,
-  LibraryHttpError,
+  TeleHttpError,
   BotConfig,
 } from './types';
 import { StorageRepository } from 'repository/storageTypes';
 import initializeLogger from 'toolbox/logger';
 import { CustomMiddleware } from './types';
 import { buildMiddlewareParams } from './methodParams';
-import { LibraryError } from './types';
+import { TeleError } from './types';
 
 export function setupServiceMiddlewares<
   AvailableRoutes extends string,
@@ -79,7 +79,7 @@ export function setupCustomMiddlewares<AvailableRoutes extends string>({
         await middleware(buildMiddlewareParams({ ctx, storage }), next);
       } catch (err) {
         ctx.$frameworkLogger.error(
-          `Error in custom middleware: ${middleware}:`,
+          `Error in or through custom middleware: ${middleware.name}:`,
           err
         );
         throw err; // Rethrow to propagate to the global error handler
@@ -99,9 +99,9 @@ export function catchMiddlewaresError(bot: TeleBot) {
       `Error while handling update ${ctx.update.update_id}:`
     );
     const e = err.error;
-    if (e instanceof LibraryError) {
+    if (e instanceof TeleError) {
       ctx.$frameworkLogger.error('Error in request:', e.description);
-    } else if (e instanceof LibraryHttpError) {
+    } else if (e instanceof TeleHttpError) {
       ctx.$frameworkLogger.error('Could not contact Telegram:', e);
     } else {
       ctx.$frameworkLogger.error('Unknown error:', e);

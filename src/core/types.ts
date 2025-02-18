@@ -26,14 +26,17 @@ export type ConstructedServiceParams = MutualControllerConstructedParams & {
   routes: Routes;
   storage: StorageRepository;
 };
+export const TeleError = GrammyError;
+export class TeleErrors {
+  static CHAT_NOT_FOUND = 400;
+}
+export const TeleHttpError = HttpError;
 export class TeleBot extends Bot {}
 export type TeleContextBare = Context;
 export type TeleContext = TeleContextBare & {
   $frameworkLogger: FrameworkLogger;
 };
 export type NextF = NextFunction;
-export const LibraryError = GrammyError;
-export const LibraryHttpError = HttpError;
 export interface TeleMessage extends Message {}
 export type TeleCallback = CallbackQuery;
 export type TeleKeyboardButton = KeyboardButton;
@@ -214,7 +217,9 @@ export type CustomMiddleware<AvailableRoutes extends string = string> = (
   next: NextF
 ) => Promise<void>;
 
-export type InitializeSystemConfig<G extends FrameworkGenerics = FrameworkGenerics> = {
+export type InitializeSystemConfig<
+  G extends FrameworkGenerics = FrameworkGenerics
+> = {
   initializeProject: (bot: TeleBot) => {
     routes: Routes<G>;
     middlewares?: CustomMiddleware<G['AR']>[];
