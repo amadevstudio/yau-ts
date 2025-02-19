@@ -112,7 +112,7 @@ function makeProcessQuery<G extends FrameworkGenerics = FrameworkGenerics>(
     if (cp.callback === undefined && cp.message !== undefined) {
       // Clear state on commands and set parent state as default route
       if (cp.isCommand) {
-        console.log('CLEARING STORAGE`');
+        libParams.ctx.$frameworkLogger.debug('CLEARING STORAGE');
         await cp.services.userStateService.clearUserStorage();
         // But if start, ignore (can't go back from start)
         if (cp.routeName !== 'start') {
