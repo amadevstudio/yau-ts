@@ -339,6 +339,8 @@ export async function initializeBot<
 
     i18n: botConfig.i18n,
     defaultTextGetters: botConfig.defaultTextGetters,
+
+    environment: botConfig.environment,
   };
 
   await initializeRoutes({ bot, botConfig: initializeRoutesConfig, storage });
