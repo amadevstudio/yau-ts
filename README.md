@@ -2,6 +2,12 @@
 
 Built on top of [grammY](https://github.com/grammyjs/grammY)
 
+## Demo
+
+
+https://github.com/user-attachments/assets/3f7a518e-6f85-4f89-8646-543199ebf453
+
+
 ## Why
 
 For example, imagine that you have a message sent to a user. You want to delete it and send two more. After 5 seconds, you want to delete these two and send new ones.
@@ -24,7 +30,7 @@ sendMessage(type: text "", text: ...)
 sendMessage(type: text "", text: ...)
 ```
 
-The idea of the project is simple rendering, the previous state is processed automatically.:
+The idea of the project is simple rendering, the previous state is processed automatically:
 
 ```ts
 d.render([
@@ -36,20 +42,24 @@ d.render([
   {type: 'text', text: ...}])
 ```
 
-You don't need to know the details of the state or the telegram. You just need to declare the routes and call the render.
+Even more, in another controller you can elegantly return your user to the above one using goBack button or method.
+
+You don't need to know the details of the state or the Telegram. You just need to declare the routes and call the render with goBack stack.
 
 ### Planned features
 
 - automate media caching;
-- state caching based on callback data;
-- menus, pagination;
-- ability to send big files;
+- cache render based on callback data (keep render structure in memory by hash of callback data and ignore state controller);
+- menus, pagination built-in module;
+- ability to send big files up to 2gb;
 - and many more.
 
 ## Alpha version
 
-- Can render messages and use state, see the demo below
-- Has i18n built-in functionality
+- Can render messages and use state, see the demo below;
+- Has goBack action and goBack button builders;
+- Has empty state to show errors and gracefully process inputs for previous states;
+- Has i18n built-in functionality.
 
 ## Requirements
 
