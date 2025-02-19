@@ -77,6 +77,7 @@ function serviceControllers(
       if (validateGoBack(ctx.callbackQuery))
         serviceProcessQuery(goBackProcessor, {
           ctx: ctx as TeleContext,
+          isCallback: true,
         });
       await ctx.answerCallbackQuery();
     }
