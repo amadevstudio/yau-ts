@@ -88,7 +88,8 @@ export async function goBackProcessor(d: ConstructedServiceParams) {
   const allStates = await d.services.userStateService.getUserStates();
   devLog(
     d,
-    `Active prev route is ${activePrev}. States after route launch`,
+    `Active prev route is ${activePrev}.`,
+    'States after route launch',
     allStates
   );
 
@@ -106,7 +107,7 @@ export async function goBackProcessor(d: ConstructedServiceParams) {
 
   devLog(
     d,
-    `States after goBack`,
+    `States after goBack:`,
     await d.services.userStateService.getUserStates()
   );
 }
