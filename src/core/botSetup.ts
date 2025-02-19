@@ -60,12 +60,10 @@ function operable() {
   return true;
 }
 
-type serviceProcessQuery = ReturnType<typeof makeServiceProcessQuery>;
-
 // Init service controllers
 function serviceControllers(
   bot: TeleBot,
-  serviceProcessQuery: serviceProcessQuery
+  serviceProcessQuery: ReturnType<typeof makeServiceProcessQuery>
 ) {
   // GoBack module
   bot.callbackQuery(
