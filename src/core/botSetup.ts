@@ -238,13 +238,13 @@ async function initializeRoutes({
       );
 
       bot.on('message', async (ctx) => {
-        if (ctx.message !== undefined && (await validateMessage(ctx.message))) {
-          // If status is 'empty' and previous waits for text, "goBack" to previously and process
-          await serviceProcessQuery(correctEmptyStateInputState, {
-            ctx,
-            isMessage: true,
-          } as LibParams);
+        // If status is 'empty' and previous waits for text, "goBack" to previously and process
+        await serviceProcessQuery(correctEmptyStateInputState, {
+          ctx,
+          isMessage: true,
+        } as LibParams);
 
+        if (ctx.message !== undefined && (await validateMessage(ctx.message))) {
           await processQuery({ ctx, isMessage: true } as LibParams);
         }
       });
