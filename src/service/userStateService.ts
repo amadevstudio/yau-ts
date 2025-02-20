@@ -52,14 +52,7 @@ export default function makeUserStateService<
   storage: StorageRepository,
   chatId: number
 ): UserStateService<AvailableRoutes> {
-  const getUserCurrentState = async (): Promise<AvailableRoutes | null> => {
-    return storage.lindex(
-      baseKeys.states(chatId),
-      -1
-    ) as Promise<AvailableRoutes | null>;
-  };
-
-  return {
+  const methods: UserStateService<AvailableRoutes> = {
     //  User repo remover
 
     clearUserStorage: async (): Promise<void> => {
@@ -78,7 +71,12 @@ export default function makeUserStateService<
       >;
     },
 
-    getUserCurrentState: getUserCurrentState,
+    getUserCurrentState: async (): Promise<AvailableRoutes | null> => {
+      return storage.lindex(
+        baseKeys.states(chatId),
+        -1
+      ) as Promise<AvailableRoutes | null>;
+    },
 
     getUserPreviousState: async (): Promise<AvailableRoutes | null> => {
       return storage.lindex(
@@ -118,8 +116,11 @@ export default function makeUserStateService<
     addUserState: async (
       state: AvailableRoutes
     ): Promise<number | undefined> => {
-      const curr = await getUserCurrentState();
-      if (curr === state) {
+      const [prev, curr] = await methods.getUserPreviousAndCurrentStates();
+      if (
+        curr === state ||
+        (curr == defaultRouteNamesMap.$empty && prev === state)
+      ) {
         return;
       }
 
@@ -127,7 +128,7 @@ export default function makeUserStateService<
     },
 
     addUserEmptyState: async (): Promise<number | undefined> => {
-      const curr = await getUserCurrentState();
+      const curr = await methods.getUserCurrentState();
       if (curr === defaultRouteNamesMap.$empty) {
         return;
       }
@@ -210,6 +211,8 @@ export default function makeUserStateService<
       );
     },
   } as const;
+
+  return methods;
 }
 
 export type UsersStateService = ReturnType<typeof makeUsersStateService>;
