@@ -17,11 +17,11 @@ export default function makeGoBack<
     AR: AvailableRoutes;
     AA: AvailableActions;
     AL: AvailableLanguages;
-  }>['defaultTextGetters']['goBack'];
+  }>['defaultTextGetters'];
   i18n: I18n<AvailableLanguages>;
 }) {
   const defaultText = getDefaultText
-    ? getDefaultText(i18n.languageCode)
+    ? getDefaultText.goBack(i18n.languageCode)
     : 'Go back';
 
   const makeButton = (customText?: string) =>
