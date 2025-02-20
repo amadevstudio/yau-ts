@@ -171,6 +171,12 @@ export type ControllerConstructedParams<
       buildLayout: (customText?: string) => InlineMarkupButton[][];
     };
 
+    emptyStateMessage: ({
+      text,
+    }: {
+      text: string;
+    }) => MessageStructure<G['AR'], G['AA']>[];
+
     buildButton: (
       type: G['AR'] | G['AA'],
       text: string,

@@ -7,12 +7,7 @@ import {
   MiddlewareConstructedParams,
   FrameworkGenerics,
 } from 'core/types';
-import {
-  TeleBot,
-  TeleCallback,
-  TeleContext,
-  TeleMessage
-} from './types';
+import { TeleBot, TeleCallback, TeleContext, TeleMessage } from './types';
 import {
   makeRender,
   makeRenderToChat,
@@ -25,6 +20,7 @@ import { goBackProcessor } from 'controller/controllers';
 import makeGoBack from 'components/goBack';
 import { buildInlineMarkupButton } from 'components/button';
 import makeUserStateService from 'service/userStateService';
+import makeEmptyStateMessage from 'components/emptyStateMessage';
 
 // Dig message and callback
 function separateMessageAndCallback(libParams: LibParams): {
@@ -150,6 +146,11 @@ export async function constructParams<
     languageCode
   );
 
+  const goBackComponents = makeGoBack({
+    getDefaultText: botConfig?.defaultTextGetters,
+    i18n,
+  });
+
   return {
     ...mutualParams,
 
@@ -194,9 +195,10 @@ export async function constructParams<
     outerSender: makeOuterSender(bot, mutualParams.services.userStateService),
 
     components: {
-      goBack: makeGoBack({
-        getDefaultText: botConfig?.defaultTextGetters?.goBack,
-        i18n,
+      goBack: goBackComponents,
+
+      emptyStateMessage: makeEmptyStateMessage<G>({
+        buildGoBackLayout: goBackComponents.buildLayout,
       }),
 
       buildButton: buildInlineMarkupButton,
