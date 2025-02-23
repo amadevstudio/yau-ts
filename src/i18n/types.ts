@@ -56,9 +56,3 @@ export type InitializeI18n = {
     languageCode: string
   ) => (id: string[], params?: { num?: number; vars?: string[]; }) => string;
 };
-
-export type I18n<AvailableLanguages extends string> = {
-  t: (id: string[], params?: { num?: number; vars?: string[]; }) => string;
-  languageCode: AvailableLanguages;
-};
-

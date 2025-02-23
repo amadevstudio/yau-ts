@@ -15,9 +15,14 @@ import {
   KeyboardButtonPollType,
   WebAppInfo,
 } from 'grammy/types';
-import { InitializeI18n, I18n } from 'i18n/types';
+import { InitializeI18n } from 'i18n/types';
 import { StorageRepository } from 'repository/storageTypes';
 import { FrameworkLogger } from 'toolbox/logger';
+
+export type I18n<AvailableLanguages extends string> = {
+  t: (id: string[], params?: { num?: number; vars?: string[] }) => string;
+  languageCode: AvailableLanguages;
+};
 
 export type ConstructedServiceParams = MutualControllerConstructedParams & {
   bot: TeleBot;

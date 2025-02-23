@@ -3,13 +3,13 @@ import { FrameworkLogger } from 'toolbox/logger';
 import {
   DefaultAvailableLanguages,
   Dictionary,
-  I18n,
   InitializeI18n,
   NumeralAll,
   Numerals,
   TranslationEmpty,
   UniteNumeral,
 } from './types';
+import { I18n } from 'core/types';
 
 const FinalTranslationMapSchema = z.record(z.string(), z.string());
 
