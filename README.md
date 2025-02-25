@@ -4,9 +4,9 @@ Built on top of [grammY](https://github.com/grammyjs/grammY)
 
 ## Demo
 
+### State management
 
-https://github.com/user-attachments/assets/3f7a518e-6f85-4f89-8646-543199ebf453
-
+<https://github.com/user-attachments/assets/3f7a518e-6f85-4f89-8646-543199ebf453>
 
 ## Why
 
@@ -50,7 +50,6 @@ You don't need to know the details of the state or the Telegram. You just need t
 
 - automate media caching;
 - cache render based on callback data (keep render structure in memory by hash of callback data and ignore state controller);
-- menus, pagination built-in module;
 - ability to send big files up to 2gb;
 - and many more.
 
@@ -59,7 +58,8 @@ You don't need to know the details of the state or the Telegram. You just need t
 - Can render messages and use state, see the demo below;
 - Has goBack action and goBack button builders;
 - Has empty state to show errors and gracefully process inputs for previous states;
-- Has i18n built-in functionality.
+- Has i18n built-in functionality;
+- Has pagination module.
 
 ## Requirements
 

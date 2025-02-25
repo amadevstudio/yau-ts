@@ -384,6 +384,8 @@ export async function initializeBot<
     i18n: botConfig.i18n,
     defaultTextGetters: botConfig.defaultTextGetters,
 
+    paging: botConfig.paging,
+
     environment: botConfig.environment,
   };
 

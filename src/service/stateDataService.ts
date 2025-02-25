@@ -73,7 +73,7 @@ export async function getUnitedData<
 
   const stateData = await getLocalStateData(userStateService, route);
 
-  return { ...stateData, ...callbackData };
+  return { ...(stateData === null ? {} : stateData), ...callbackData };
 }
 
 export function getCallbackType<AvailableActions extends DefaultActionNames>(

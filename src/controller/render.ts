@@ -1,13 +1,10 @@
-import makeUserStateService, {
-} from './../service/userStateService';
-import {
-  MessageStructure,
-  ResultMessageStructure,
-} from 'controller/types';
+import makeUserStateService from './../service/userStateService';
+import { MessageStructure, ResultMessageStructure } from 'controller/types';
 import {
   TeleBot,
-  TeleMessage, TeleInlineKeyboardButton,
-  TeleKeyboardButton
+  TeleMessage,
+  TeleInlineKeyboardButton,
+  TeleKeyboardButton,
 } from 'core/types';
 import {
   FrameworkGenerics,
@@ -19,39 +16,25 @@ import {
 } from 'core/types';
 import { StorageRepository } from 'repository/storageTypes';
 
-type MakeRenderBase<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
-> = {
+type MakeRenderBase<G extends FrameworkGenerics = FrameworkGenerics> = {
   bot: TeleBot;
-  routeName: AvailableRoutes;
-  routes: Routes<{
-    AR: AvailableRoutes;
-    AA: AvailableActions;
-    AL: AvailableLanguages;
-  }>;
+  routeName: G['AR'];
+  routes: Routes<G>;
 };
 
-type MakeRender<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
-> = MakeRenderBase<AvailableRoutes, AvailableActions, AvailableLanguages> & {
-  isCommand: boolean;
-  isMessage: boolean;
-  currentState: AvailableRoutes | null;
-  userStateService: UserStateService<AvailableRoutes>;
-  chatId: number;
-};
+type MakeRender<G extends FrameworkGenerics = FrameworkGenerics> =
+  MakeRenderBase<G> & {
+    isCommand: boolean;
+    isMessage: boolean;
+    currentState: G['AR'] | null;
+    userStateService: UserStateService<G['AR']>;
+    chatId: number;
+  };
 
-type MakeRenderToChat<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
-> = MakeRenderBase<AvailableRoutes, AvailableActions, AvailableLanguages> & {
-  storage: StorageRepository;
-};
+type MakeRenderToChat<G extends FrameworkGenerics = FrameworkGenerics> =
+  MakeRenderBase<G> & {
+    storage: StorageRepository;
+  };
 
 type DecideShouldRemoveReplyKeyboardParams<G extends FrameworkGenerics> = {
   routeName?: G['AR'];
@@ -60,18 +43,12 @@ type DecideShouldRemoveReplyKeyboardParams<G extends FrameworkGenerics> = {
 };
 
 async function decideShouldRemoveReplyKeyboard<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
+  G extends FrameworkGenerics = FrameworkGenerics
 >({
   routes,
   routeName,
   currentState,
-}: DecideShouldRemoveReplyKeyboardParams<{
-  AR: AvailableRoutes;
-  AA: AvailableActions;
-  AL: AvailableLanguages;
-}>) {
+}: DecideShouldRemoveReplyKeyboardParams<G>) {
   const newStateHasReplyKeyboard = routes[routeName]?.hasReplyKeyboard === true;
   // If new state has reply keyboard, don't remove
   if (newStateHasReplyKeyboard) return false;
@@ -94,11 +71,7 @@ async function decideShouldRemoveReplyKeyboard<
 }
 
 // Render to the chat.
-export function makeRender<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
->({
+export function makeRender<G extends FrameworkGenerics = FrameworkGenerics>({
   bot,
   routeName,
   currentState,
@@ -107,11 +80,7 @@ export function makeRender<
   isCommand,
   isMessage,
   routes,
-}: MakeRender<
-  AvailableRoutes,
-  AvailableActions,
-  AvailableLanguages
->): RenderCurried {
+}: MakeRender<G>): RenderCurried {
   return async (messages: MessageStructure[], params?: RenderParams) => {
     return render(bot, userStateService, chatId, messages, {
       ...params,
@@ -125,82 +94,48 @@ export function makeRender<
 
 // Render to another chat.
 export function makeRenderToChat<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
+  G extends FrameworkGenerics = FrameworkGenerics
 >({
   bot,
   routeName,
   storage,
   routes,
-}: MakeRenderToChat<
-  AvailableRoutes,
-  AvailableActions,
-  AvailableLanguages
->): RenderToChatCurried {
+}: MakeRenderToChat<G>): RenderToChatCurried {
   return async (
     chatId: number,
     messages: MessageStructure[],
     params?: RenderParams
   ) => {
-    const userStateService = makeUserStateService<AvailableRoutes>(
-      storage,
-      chatId
-    );
+    const userStateService = makeUserStateService<G['AR']>(storage, chatId);
 
-    return render<AvailableRoutes, AvailableActions, AvailableLanguages>(
-      bot,
-      userStateService,
-      chatId,
-      messages,
-      {
-        ...params,
-        routes,
-        routeName,
-        currentState: await userStateService.getUserCurrentState(),
-      }
-    );
+    return render<G>(bot, userStateService, chatId, messages, {
+      ...params,
+      routes,
+      routeName,
+      currentState: await userStateService.getUserCurrentState(),
+    });
   };
 }
 
-export type InnerRenderParams<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
-> = {
-  resending?: boolean;
-  routes: Routes<{
-    AR: AvailableRoutes;
-    AA: AvailableActions;
-    AL: AvailableLanguages;
-  }>;
-  routeName: AvailableRoutes;
-  currentState: AvailableRoutes | null;
-};
+export type InnerRenderParams<G extends FrameworkGenerics = FrameworkGenerics> =
+  {
+    resending?: boolean;
+    routes: Routes<G>;
+    routeName: G['AR'];
+    currentState: G['AR'] | null;
+  };
 
-async function render<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
->(
+async function render<G extends FrameworkGenerics = FrameworkGenerics>(
   bot: TeleBot,
-  userStateService: UserStateService<AvailableRoutes>,
+  userStateService: UserStateService<G['AR']>,
   chatId: number,
   messages: MessageStructure[],
-  params: InnerRenderParams<
-    AvailableRoutes,
-    AvailableActions,
-    AvailableLanguages
-  >
+  params: InnerRenderParams<G>
 ): Promise<ResultMessageStructure[]> {
   const resending =
     params.resending === true || (await userStateService.getUserResendFlag());
 
-  const shouldRemoveReplyKeyboard = await decideShouldRemoveReplyKeyboard<
-    AvailableRoutes,
-    AvailableActions,
-    AvailableLanguages
-  >({
+  const shouldRemoveReplyKeyboard = await decideShouldRemoveReplyKeyboard<G>({
     routes: params.routes,
     routeName: params.routeName,
     currentState: params.currentState,

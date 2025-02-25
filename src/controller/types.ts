@@ -5,14 +5,18 @@ import {
   TeleWebAppInfo,
   TeleKeyboardButton,
   TeleMessage,
+  SpecialStateKeywords,
 } from 'core/types';
 
 type MessageTypes = 'text'; // TODO: 'image' | 'audio' ...
 export type ButtonData<
   AvailableRoutes extends string = string,
   AvailableActions extends string = string
-> = {
-  $tp?: AvailableRoutes | AvailableActions;
+> = { [key in SpecialStateKeywords]?: unknown } & {
+  $tp?: AvailableRoutes;
+  $act?: AvailableActions;
+  $page?: number;
+  $search?: boolean;
 };
 export type InlineMarkupButton<
   AvailableRoutes extends string = string,
@@ -20,7 +24,7 @@ export type InlineMarkupButton<
 > = {
   text: string;
   data: {
-    [key in string]: string | number | null;
+    [key in string]: string | number | boolean | null;
   } & ButtonData<AvailableRoutes, AvailableActions>;
 };
 

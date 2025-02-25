@@ -24,6 +24,8 @@ export type I18n<AvailableLanguages extends string> = {
   languageCode: AvailableLanguages;
 };
 
+export type SpecialStateKeywords = '$tp' | '$act' | '$page' | '$search';
+
 export type ConstructedServiceParams = MutualControllerConstructedParams & {
   bot: TeleBot;
   botConfig: BotConfig;
@@ -95,12 +97,14 @@ export type UserStateService<AvailableRoutes extends string = string> = {
   getUserCurrentState(): Promise<AvailableRoutes | null>;
   getUserPreviousState(): Promise<AvailableRoutes | null>;
   getUserPreviousAndCurrentStates(): Promise<(AvailableRoutes | undefined)[]>;
-  getUserStateData(state: AvailableRoutes): Promise<Record<string, unknown>>;
+  getUserStateData(
+    state: AvailableRoutes
+  ): Promise<Record<string | SpecialStateKeywords, unknown>>;
   addUserState(state: AvailableRoutes): Promise<number | undefined>;
   addUserEmptyState(): Promise<number | undefined>;
   addUserStateData(
     state: AvailableRoutes,
-    data: Record<string, unknown>
+    data: Record<string | SpecialStateKeywords, unknown>
   ): Promise<number>;
   deleteUserCurrentState(): Promise<AvailableRoutes | null>;
   deleteUserStates(): Promise<number>;
@@ -186,11 +190,40 @@ export type ControllerConstructedParams<
       text: string;
     }) => MessageStructure<G['AR'], G['AA']>[];
 
-    buildButton: (
-      type: G['AR'] | G['AA'],
-      text: string,
-      data?: Record<string, unknown>
-    ) => InlineMarkupButton<G['AR'] | G['AA']>;
+    inlineButtons: {
+      buildState: (p: {
+        type: G['AR'] | G['AA'];
+        text: string;
+        data?: Record<string, unknown>;
+      }) => InlineMarkupButton<G['AR'] | G['AA']>;
+    };
+
+    paging: {
+      buildSetup: <ResultData, ErrorType = string>(p: {
+        loadPageData: (p: {
+          offset: number;
+          page: number;
+          perPage: number;
+          searchQuery?: string;
+        }) => Promise<ResultData[] | { error: ErrorType }>;
+        loadCount: (p: {
+          searchQuery?: string;
+        }) => Promise<number | { error: ErrorType }>;
+        overwritePerPage?: number;
+        customGoBackText?: string;
+      }) => Promise<
+        | {
+            currentPage: number;
+            pageData: ResultData[];
+            helperMessage: string;
+            markup: InlineMarkupButton<G['AR'], G['AA']>[][];
+          }
+        | {
+            error: ErrorType | 'noDataFound' | 'noDataFoundInSearch';
+            searchMode?: boolean;
+          }
+      >;
+    };
   };
 
   i18n: I18n<G['AL']>;
@@ -212,6 +245,15 @@ export type Route<G extends FrameworkGenerics = FrameworkGenerics> = {
   >;
   validator?: (d: ControllerConstructedParams) => boolean;
   hasReplyKeyboard?: boolean;
+  // isPageable?: boolean;
+  // pageable?: {
+  //   loadPageData: <ResultData>(p: {
+  //     offset: number;
+  //     perPage: number;
+  //     searchText?: string;
+  //   }) => Promise<ResultData>;
+  //   loadCount: (p: { searchText?: string }) => Promise<number>;
+  // };
 };
 
 export type DefaultRouteNames = '$empty';
@@ -233,34 +275,39 @@ export type CustomMiddleware<AvailableRoutes extends string = string> = (
   next: NextF
 ) => Promise<void>;
 
+type MutualTypes<G extends FrameworkGenerics = FrameworkGenerics> = {
+  defaultRoute: G['AR'];
+
+  i18n?: InitializeI18n;
+  defaultTextGetters?: {
+    goBack?: (languageCode?: G['AL']) => string[];
+    paging?: {
+      navigationHelper?: (languageCode?: G['AL']) => string[];
+      clearSearch?: (languageCode?: G['AL']) => string[];
+    };
+  };
+
+  paging?: {
+    defaultPerPage?: number;
+  };
+
+  environment?: 'development' | 'production';
+};
+
 export type InitializeSystemConfig<
   G extends FrameworkGenerics = FrameworkGenerics
-> = {
+> = MutualTypes<G> & {
   initializeProject: (bot: TeleBot) => {
     routes: Routes<G>;
     middlewares?: CustomMiddleware<G['AR']>[];
   };
-  defaultRoute: G['AR'];
-
-  i18n?: InitializeI18n;
-  defaultTextGetters?: {
-    goBack: (languageCode: G['AL']) => string;
-  };
 
   testTelegram?: boolean;
-  environment?: 'development' | 'production';
 };
 
-export type BotConfig<G extends FrameworkGenerics = FrameworkGenerics> = {
-  routes: Routes<G>;
-  defaultRoute: G['AR'];
+export type BotConfig<G extends FrameworkGenerics = FrameworkGenerics> =
+  MutualTypes<G> & {
+    routes: Routes<G>;
 
-  middlewares?: CustomMiddleware<G['AR']>[];
-
-  i18n?: InitializeI18n;
-  defaultTextGetters?: {
-    goBack: (languageCode: G['AL']) => string;
+    middlewares?: CustomMiddleware<G['AR']>[];
   };
-
-  environment?: 'development' | 'production';
-};

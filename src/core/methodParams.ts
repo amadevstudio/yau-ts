@@ -18,9 +18,10 @@ import { StorageRepository } from 'repository/storageTypes';
 import { getUnitedData } from 'service/stateDataService';
 import { goBackProcessor } from 'controller/controllers';
 import makeGoBack from 'components/goBack';
-import { buildInlineMarkupButton } from 'components/button';
 import makeUserStateService from 'service/userStateService';
 import makeEmptyStateMessage from 'components/emptyStateMessage';
+import { makePaging } from 'components/paging';
+import { makeBuildInlineMarkupButton } from 'components/button';
 
 // Dig message and callback
 function separateMessageAndCallback(libParams: LibParams): {
@@ -95,7 +96,7 @@ export function constructServiceParams<
   storage,
 }: {
   bot: TeleBot;
-  botId: number,
+  botId: number;
   botConfig: BotConfig;
   libParams: LibParams;
   storage: StorageRepository;
@@ -157,9 +158,35 @@ export async function constructParams<
     languageCode
   );
 
-  const goBackComponents = makeGoBack({
+  const buttonBuilders = makeBuildInlineMarkupButton<G>();
+
+  const goBackComponents = makeGoBack<G>({
     getDefaultText: botConfig?.defaultTextGetters,
     i18n,
+    buildInlineMarkupButton: buttonBuilders.buildState,
+  });
+
+  const unitedData = await getUnitedData(
+    callback,
+    mutualParams.services.userStateService,
+    routeName,
+    actionName
+  );
+
+  const pagingComponents = makePaging({
+    type: routeName,
+    getDefaultText: botConfig?.defaultTextGetters,
+    userStateService: mutualParams.services.userStateService,
+    i18n,
+    unitedData,
+    messageText:
+      !mutualParams.isCallback && !mutualParams.isCommand
+        ? message.text
+        : undefined,
+    defaultPerPage: botConfig.paging?.defaultPerPage,
+    buildPageButton: buttonBuilders.buildPage,
+    buildGoBackButton: goBackComponents.buildButton,
+    buildClearSearchButton: buttonBuilders.buildClearSearch,
   });
 
   return {
@@ -175,12 +202,7 @@ export async function constructParams<
     actionName,
     stateBeforeInteraction: currentState,
 
-    unitedData: await getUnitedData(
-      callback,
-      mutualParams.services.userStateService,
-      routeName,
-      actionName
-    ),
+    unitedData,
 
     isStepForward,
     isStepBack,
@@ -197,7 +219,7 @@ export async function constructParams<
       isMessage: mutualParams.isMessage,
       routes: botConfig.routes,
     }),
-    renderToChat: makeRenderToChat({
+    renderToChat: makeRenderToChat<G>({
       bot,
       routeName,
       storage,
@@ -212,7 +234,9 @@ export async function constructParams<
         buildGoBackLayout: goBackComponents.buildLayout,
       }),
 
-      buildButton: buildInlineMarkupButton,
+      inlineButtons: buttonBuilders,
+
+      paging: pagingComponents,
     },
 
     i18n: i18n,

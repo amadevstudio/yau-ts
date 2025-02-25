@@ -1,31 +1,34 @@
 import { defaultActionNamesMap } from 'controller/defaultRoutes';
-import { I18n } from 'core/types';
-import { buildInlineMarkupButton } from './button';
+import { FrameworkGenerics, I18n } from 'core/types';
 import { BotConfig } from 'core/types';
+import { InlineMarkupButton } from 'controller/types';
 
 export const goBackType = defaultActionNamesMap.$back;
 
 export default function makeGoBack<
-  AvailableRoutes extends string,
-  AvailableActions extends string,
-  AvailableLanguages extends string
+  G extends FrameworkGenerics = FrameworkGenerics
 >({
   getDefaultText,
   i18n,
+  buildInlineMarkupButton,
 }: {
-  getDefaultText?: BotConfig<{
-    AR: AvailableRoutes;
-    AA: AvailableActions;
-    AL: AvailableLanguages;
-  }>['defaultTextGetters'];
-  i18n: I18n<AvailableLanguages>;
+  getDefaultText?: BotConfig<G>['defaultTextGetters'];
+  i18n: I18n<G['AL']>;
+  buildInlineMarkupButton: (p: {
+    type: G['AR'];
+    text: string;
+  }) => InlineMarkupButton;
 }) {
-  const defaultText = getDefaultText
-    ? getDefaultText.goBack(i18n.languageCode)
-    : 'Go back';
+  const defaultText =
+    getDefaultText && getDefaultText.goBack
+      ? i18n.t(getDefaultText.goBack(i18n.languageCode))
+      : 'Go back';
 
   const makeButton = (customText?: string) =>
-    buildInlineMarkupButton(goBackType, customText ?? defaultText);
+    buildInlineMarkupButton({
+      type: goBackType,
+      text: customText ?? defaultText,
+    });
 
   return {
     buildButton: makeButton,
