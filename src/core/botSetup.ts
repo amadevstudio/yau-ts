@@ -202,6 +202,13 @@ async function initializeRoutes({
 
   const usersStateService = makeUsersStateService(storage);
 
+  const messageQueryProcessors: {
+    [key in string]: {
+      processQuery: ReturnType<typeof makeProcessQuery>;
+      validateMessage: ReturnType<typeof initializeValidateMessages>;
+    };
+  } = {};
+
   // Initialize routes
   for (const [routeName, routeParams] of Object.entries(botConfig.routes)) {
     // System routes
@@ -231,24 +238,16 @@ async function initializeRoutes({
       });
     }
 
-    // Message section
+    // Message prepare section
     if (routeParams.availableFrom.includes('message')) {
       const validateMessage = initializeValidateMessages(
         routeParams.statesForInput ?? [routeName],
         usersStateService
       );
-
-      bot.on('message', async (ctx) => {
-        // If status is 'empty' and previous waits for text, "goBack" to previously and process
-        await serviceProcessQuery(correctEmptyStateInputState, {
-          ctx,
-          isMessage: true,
-        } as LibParams);
-
-        if (ctx.message !== undefined && (await validateMessage(ctx.message))) {
-          await processQuery({ ctx, isMessage: true } as LibParams);
-        }
-      });
+      messageQueryProcessors[routeName] = {
+        processQuery,
+        validateMessage,
+      };
     }
 
     // Callback section (state changing)
@@ -306,6 +305,36 @@ async function initializeRoutes({
       }
     }
   }
+  // Message section
+  bot.on('message', async (ctx) => {
+    if (ctx.message === undefined) {
+      return;
+    }
+
+    // Get current state
+    const routeName = await usersStateService.getUserCurrentState(
+      ctx.message.chat.id
+    );
+    if (routeName === null) {
+      return;
+    }
+
+    const { processQuery, validateMessage } =
+      messageQueryProcessors[routeName];
+    if (!validateMessage(ctx.message)) {
+      return;
+    }
+
+    // If status is 'empty' and previous waits for text, "goBack" to previously and process
+    await serviceProcessQuery(correctEmptyStateInputState, {
+      ctx,
+      isMessage: true,
+    } as LibParams);
+
+    if (ctx.message !== undefined && (await validateMessage(ctx.message))) {
+      await processQuery({ ctx, isMessage: true } as LibParams);
+    }
+  });
 }
 
 // Framework entrypoint
