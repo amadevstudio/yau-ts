@@ -118,6 +118,8 @@ export type UserStateService<AvailableRoutes extends string = string> = {
 export type MutualControllerConstructedParams<
   G extends FrameworkGenerics = FrameworkGenerics
 > = {
+  botId: number;
+
   chat: {
     id: number;
   };
@@ -129,6 +131,8 @@ export type MutualControllerConstructedParams<
   isMessage: boolean;
   isCallback: boolean;
   isAction: boolean;
+
+  isMessageFromTheBot: boolean;
 
   services: { userStateService: UserStateService<G['AR']> };
 };

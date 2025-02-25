@@ -39,9 +39,11 @@ function separateMessageAndCallback(libParams: LibParams): {
 
 // Mutual for service and common routes
 function buildMutualParams<G extends FrameworkGenerics = FrameworkGenerics>({
+  botId,
   libParams,
   storage,
 }: {
+  botId: number;
   libParams: LibParams;
   storage: StorageRepository;
 }): MutualControllerConstructedParams<G> {
@@ -62,6 +64,8 @@ function buildMutualParams<G extends FrameworkGenerics = FrameworkGenerics>({
   const isAction = libParams.isAction ?? false;
 
   return {
+    botId: botId,
+
     chat: {
       id: chatId,
     },
@@ -74,6 +78,8 @@ function buildMutualParams<G extends FrameworkGenerics = FrameworkGenerics>({
     isAction,
     isMessage,
 
+    isMessageFromTheBot: message.from?.id === botId,
+
     services,
   };
 }
@@ -83,11 +89,13 @@ export function constructServiceParams<
   G extends FrameworkGenerics = FrameworkGenerics
 >({
   bot,
+  botId,
   botConfig,
   libParams,
   storage,
 }: {
   bot: TeleBot;
+  botId: number,
   botConfig: BotConfig;
   libParams: LibParams;
   storage: StorageRepository;
@@ -100,7 +108,7 @@ export function constructServiceParams<
     storage,
     routes: botConfig.routes,
 
-    ...buildMutualParams<G>({ libParams, storage }),
+    ...buildMutualParams<G>({ botId, libParams, storage }),
   };
 }
 
@@ -109,6 +117,7 @@ export async function constructParams<
   G extends FrameworkGenerics = FrameworkGenerics
 >({
   bot,
+  botId,
   routeName,
   actionName,
   botConfig,
@@ -117,6 +126,7 @@ export async function constructParams<
   isStepBack = false,
 }: {
   bot: TeleBot;
+  botId: number;
   routeName: G['AR'];
   // routeParams: TRoute,
   actionName?: G['AA'];
@@ -128,6 +138,7 @@ export async function constructParams<
   const { message, callback } = separateMessageAndCallback(libParams);
 
   const mutualParams = buildMutualParams<G>({
+    botId,
     libParams,
     storage,
   });

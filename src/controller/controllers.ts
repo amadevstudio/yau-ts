@@ -76,6 +76,7 @@ export async function goBackProcessor(d: ConstructedServiceParams) {
   method(
     await constructParams({
       bot: d.bot,
+      botId: d.botId,
       routeName: activePrev,
       botConfig: d.botConfig,
       libParams: d.libParams,

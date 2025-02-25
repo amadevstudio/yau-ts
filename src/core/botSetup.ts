@@ -34,6 +34,7 @@ import { escapeSpecialCharacters } from 'toolbox/regex';
 // Curry service controllers
 function makeServiceProcessQuery(
   bot: TeleBot,
+  botId: number,
   botConfig: BotConfig,
   storage: StorageRepository
 ) {
@@ -47,6 +48,7 @@ function makeServiceProcessQuery(
   ) {
     const csp = constructServiceParams({
       bot,
+      botId,
       botConfig,
       libParams,
       storage,
@@ -87,14 +89,16 @@ function serviceControllers(
 // Curry controllers
 function makeProcessQuery<G extends FrameworkGenerics = FrameworkGenerics>(
   bot: TeleBot,
+  botId: number,
   routeName: G['AR'],
   routeParams: Route,
-  botConfig: BotConfig,
+  botConfig: BotConfig<G>,
   storage: StorageRepository
 ) {
   return async function (libParams: LibParams) {
-    const cp = await constructParams({
+    const cp = await constructParams<G>({
       bot,
+      botId,
       routeName,
       botConfig,
       libParams,
@@ -150,6 +154,7 @@ function makeProcessQuery<G extends FrameworkGenerics = FrameworkGenerics>(
 
 function makeProcessAction<G extends FrameworkGenerics = FrameworkGenerics>(
   bot: TeleBot,
+  botId: number,
   routeName: G['AR'],
   routeParams: Route<G>,
   actionName: G['AA'],
@@ -159,6 +164,7 @@ function makeProcessAction<G extends FrameworkGenerics = FrameworkGenerics>(
   return async function (libParams: LibParams) {
     const cp = await constructParams<G>({
       bot,
+      botId,
       routeName,
       actionName,
       botConfig,
@@ -197,7 +203,14 @@ async function initializeRoutes({
   // Catch middleware errors
   catchMiddlewaresError(bot);
 
-  const serviceProcessQuery = makeServiceProcessQuery(bot, botConfig, storage);
+  const botId = bot.botInfo.id;
+
+  const serviceProcessQuery = makeServiceProcessQuery(
+    bot,
+    botId,
+    botConfig,
+    storage
+  );
   serviceControllers(bot, serviceProcessQuery);
 
   const usersStateService = makeUsersStateService(storage);
@@ -218,6 +231,7 @@ async function initializeRoutes({
 
     const processQuery = makeProcessQuery(
       bot,
+      botId,
       routeName,
       routeParams,
       botConfig,
@@ -271,6 +285,7 @@ async function initializeRoutes({
       for (const actionName in routeParams.actions) {
         const processAction = makeProcessAction(
           bot,
+          botId,
           routeName,
           routeParams,
           actionName,
@@ -354,6 +369,7 @@ export async function initializeBot<
       ...(augmentedBotConfig.testTelegram ? { environment: 'test' } : {}),
     },
   });
+  await bot.init();
 
   const storage = await initStorage(storageUrl);
 
