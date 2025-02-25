@@ -30,7 +30,7 @@ function uniteSafe<Languages extends string = DefaultAvailableLanguages>(
   languageCode: Languages,
   numeralType: Numerals
 ): string | undefined {
-  if (!(languageCode in entity[numeralType]!)) {
+  if (!(numeralType in entity)) {
     return (entity as UniteNumeral<Languages>)?.unite?.[languageCode];
   }
 
