@@ -8,6 +8,10 @@ Built on top of [grammY](https://github.com/grammyjs/grammY)
 
 <https://github.com/user-attachments/assets/3f7a518e-6f85-4f89-8646-543199ebf453>
 
+### Pagination
+
+<https://github.com/user-attachments/assets/579ab53c-54ae-4014-af90-6fe9a487d4e3>
+
 ## Why
 
 For example, imagine that you have a message sent to a user. You want to delete it and send two more. After 5 seconds, you want to delete these two and send new ones.
