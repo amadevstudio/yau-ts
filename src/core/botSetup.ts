@@ -264,22 +264,6 @@ async function initializeRoutes({
       };
     }
 
-    // Callback section (state changing)
-    if (routeParams.availableFrom.includes('callback')) {
-      // Validate "$tp":"$state_name"
-      bot.callbackQuery(
-        new RegExp(
-          `"${escapeSpecialCharacters(
-            typeFieldName
-          )}":"${escapeSpecialCharacters(routeName)}"`
-        ),
-        async (ctx) => {
-          await processQuery({ ctx, isCallback: true } as LibParams);
-          await ctx.answerCallbackQuery();
-        }
-      );
-    }
-
     // Actions section (in-state actions)
     if (routeParams.actions) {
       for (const actionName in routeParams.actions) {
@@ -319,6 +303,22 @@ async function initializeRoutes({
         );
       }
     }
+
+    // Callback section (state changing)
+    if (routeParams.availableFrom.includes('callback')) {
+      // Validate "$tp":"$state_name"
+      bot.callbackQuery(
+        new RegExp(
+          `"${escapeSpecialCharacters(
+            typeFieldName
+          )}":"${escapeSpecialCharacters(routeName)}"`
+        ),
+        async (ctx) => {
+          await processQuery({ ctx, isCallback: true } as LibParams);
+          await ctx.answerCallbackQuery();
+        }
+      );
+    }
   }
   // Message section
   bot.on('message', async (ctx) => {
@@ -334,8 +334,7 @@ async function initializeRoutes({
       return;
     }
 
-    const { processQuery, validateMessage } =
-      messageQueryProcessors[routeName];
+    const { processQuery, validateMessage } = messageQueryProcessors[routeName];
     if (!validateMessage(ctx.message)) {
       return;
     }
