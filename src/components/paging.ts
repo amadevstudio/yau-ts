@@ -18,7 +18,7 @@ function recognizePage(
   const pInMessage = !isNaN(Number(messageText))
     ? Number(messageText)
     : undefined;
-  const p = pInMessage ?? (unitedData.$page as number) ?? 1;
+  const p = pInMessage ?? (unitedData[pageFieldName] as number) ?? 1;
   if (p < 1) {
     return 1;
   }
@@ -32,9 +32,10 @@ function recognizeSearch(
   const sInMessage = isNaN(Number(messageText)) ? messageText : undefined;
   const s =
     sInMessage ??
-    (unitedData.$search === false || unitedData.$search === undefined
+    (unitedData[searchFieldName] === false ||
+    unitedData[searchFieldName] === undefined
       ? undefined
-      : (unitedData.$search as string));
+      : (unitedData[searchFieldName] as string));
   return s;
 }
 
@@ -148,8 +149,8 @@ export function makePaging<G extends FrameworkGenerics = FrameworkGenerics>({
 
       // Update user state
       await userStateService.addUserStateData(type, {
-        $page: limitedCurrentPage,
-        $search: searchQuery,
+        [pageFieldName]: limitedCurrentPage,
+        [searchFieldName]: searchQuery,
       });
 
       return {

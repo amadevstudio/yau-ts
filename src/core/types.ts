@@ -24,7 +24,16 @@ export type I18n<AvailableLanguages extends string> = {
   languageCode: AvailableLanguages;
 };
 
-export type SpecialStateKeywords = '$tp' | '$act' | '$page' | '$search';
+export const typeFieldName = '$tp';
+export const actionFieldName = '$act';
+export const pageFieldName = '$page';
+export const searchFieldName = '$search';
+
+export type SpecialStateKeywords =
+  | typeof typeFieldName
+  | typeof actionFieldName
+  | typeof pageFieldName
+  | typeof searchFieldName;
 
 export type ConstructedServiceParams = MutualControllerConstructedParams & {
   bot: TeleBot;
@@ -59,9 +68,6 @@ export type FrameworkGenerics = {
   AA: string; // AvailableActions
   AL: string; // AvailableLanguages
 };
-
-export const typeFieldName = '$tp';
-export const actionFieldName = '$act';
 
 export type LibParams = {
   ctx: TeleContext;
@@ -196,6 +202,23 @@ export type ControllerConstructedParams<
         text: string;
         data?: Record<string, unknown>;
       }) => InlineMarkupButton<G['AR'] | G['AA']>;
+      buildAction: (p: {
+        type: G['AR'];
+        action: G['AA'];
+        text: string;
+        data?: Record<string, unknown>;
+      }) => InlineMarkupButton<G['AR'], G['AA']>;
+      buildPage: (p: {
+        type: G['AR'];
+        page: number;
+        text: string;
+        data?: Record<string, unknown>;
+      }) => InlineMarkupButton<G['AR']>;
+      buildClearSearch: (p: {
+        type: G['AR'];
+        text: string;
+        data?: Record<string, unknown>;
+      }) => InlineMarkupButton<G['AR']>;
     };
 
     paging: {

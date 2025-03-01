@@ -20,6 +20,7 @@ export {
   buildEntityNamesMap,
   buildRoutesList,
   buildRoutes,
+  buildActionsList,
 } from './controller/defaultRoutes';
 
 export { initializeBot } from './core/botSetup';

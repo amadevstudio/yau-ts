@@ -174,7 +174,7 @@ async function render<G extends FrameworkGenerics = FrameworkGenerics>(
 export function makeOuterSender<AvailableRoutes extends string>(
   bot: TeleBot,
   userStateService: UserStateService<AvailableRoutes>
-) {
+): OuterSenderCurried {
   return async (
     chatId: number,
     messages: MessageStructure[]

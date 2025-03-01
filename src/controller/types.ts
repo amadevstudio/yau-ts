@@ -5,18 +5,21 @@ import {
   TeleWebAppInfo,
   TeleKeyboardButton,
   TeleMessage,
-  SpecialStateKeywords,
+  typeFieldName,
+  actionFieldName,
+  pageFieldName,
+  searchFieldName,
 } from 'core/types';
 
 type MessageTypes = 'text'; // TODO: 'image' | 'audio' ...
 export type ButtonData<
   AvailableRoutes extends string = string,
   AvailableActions extends string = string
-> = { [key in SpecialStateKeywords]?: unknown } & {
-  $tp?: AvailableRoutes;
-  $act?: AvailableActions;
-  $page?: number;
-  $search?: boolean;
+> = {
+  [typeFieldName]?: AvailableRoutes;
+  [actionFieldName]?: AvailableActions;
+  [pageFieldName]?: number;
+  [searchFieldName]?: boolean;
 };
 export type InlineMarkupButton<
   AvailableRoutes extends string = string,

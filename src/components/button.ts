@@ -1,9 +1,16 @@
 import { InlineMarkupButton } from 'controller/types';
-import { FrameworkGenerics } from 'core/types';
+import {
+  actionFieldName,
+  ControllerConstructedParams,
+  FrameworkGenerics,
+  pageFieldName,
+  searchFieldName,
+  typeFieldName,
+} from 'core/types';
 
 export function makeBuildInlineMarkupButton<
   G extends FrameworkGenerics = FrameworkGenerics
->() {
+>(): ControllerConstructedParams<G>['components']['inlineButtons'] {
   return {
     buildState: function ({
       type,
@@ -19,10 +26,35 @@ export function makeBuildInlineMarkupButton<
       }
 
       return {
-        text: text,
+        text,
         data: {
           ...data,
-          $tp: type,
+          [typeFieldName]: type,
+        },
+      };
+    },
+
+    buildAction: function ({
+      type,
+      action,
+      text,
+      data,
+    }: {
+      type: G['AR'];
+      action: G['AA'];
+      text: string;
+      data?: Record<string, unknown>;
+    }) {
+      if (data === undefined) {
+        data = {};
+      }
+
+      return {
+        text,
+        data: {
+          ...data,
+          [typeFieldName]: type,
+          [actionFieldName]: action,
         },
       };
     },
@@ -43,11 +75,11 @@ export function makeBuildInlineMarkupButton<
       }
 
       return {
-        text: text,
+        text,
         data: {
           ...data,
-          $tp: type,
-          $page: page,
+          [typeFieldName]: type,
+          [pageFieldName]: page,
         },
       };
     },
@@ -65,12 +97,12 @@ export function makeBuildInlineMarkupButton<
       }
 
       return {
-        text: text,
+        text,
         data: {
           ...data,
-          $tp: type,
-          $page: 1,
-          $search: false,
+          [typeFieldName]: type,
+          [pageFieldName]: 1,
+          [searchFieldName]: false,
         },
       };
     },
