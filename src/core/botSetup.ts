@@ -172,7 +172,7 @@ function makeProcessAction<G extends FrameworkGenerics = FrameworkGenerics>(
       storage,
     });
 
-    routeParams.actions![actionName].method(cp);
+    return routeParams.actions![actionName].method(cp);
   };
 }
 
@@ -213,7 +213,7 @@ async function initializeRoutes({
   );
   serviceControllers(bot, serviceProcessQuery);
 
-  const usersStateService = makeUsersStateService(storage);
+  const usersStateService = makeUsersStateService({ storage });
 
   const messageQueryProcessors: {
     [key in string]: {

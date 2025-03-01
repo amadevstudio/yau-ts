@@ -41,6 +41,9 @@ export type ConstructedServiceParams = MutualControllerConstructedParams & {
   libParams: LibParams;
   routes: Routes;
   storage: StorageRepository;
+  services: {
+    usersStateService: UsersStateService;
+  };
 };
 export const TeleError = GrammyError;
 export class TeleErrors {
@@ -92,10 +95,27 @@ export type RenderToChatCurried = (
   params?: RenderParams
 ) => Promise<ResultMessageStructure[]>;
 
-type OuterSenderCurried = (
+export type OuterSenderCurried = (
   chatId: number,
   messages: MessageStructure[]
 ) => Promise<ResultMessageStructure[]>;
+
+export type NotifyCurried = (p: {
+  message: string;
+  alert?: boolean;
+  saveState?: boolean;
+}) => Promise<void>;
+
+export type UsersStateService<AvailableRoutes extends string = string> = {
+  getUserStates(chatId: number): Promise<AvailableRoutes[]>;
+  getUserCurrentState(chatId: number): Promise<AvailableRoutes | null>;
+  getUserPreviousState(chatId: number): Promise<AvailableRoutes | null>;
+  getUserPreviousAndCurrentStates(
+    chatId: number
+  ): Promise<(AvailableRoutes | undefined)[]>;
+  deleteUserCurrentState(chatId: number): Promise<AvailableRoutes | null>;
+  deleteUserStateData(chatId: number, state: string): Promise<number>;
+};
 
 export type UserStateService<AvailableRoutes extends string = string> = {
   clearUserStorage(): Promise<void>;
@@ -112,6 +132,9 @@ export type UserStateService<AvailableRoutes extends string = string> = {
     state: AvailableRoutes,
     data: Record<string | SpecialStateKeywords, unknown>
   ): Promise<number>;
+  addUserCurrentStateData(
+    data: Record<string | SpecialStateKeywords, unknown>
+  ): Promise<number>;
   deleteUserCurrentState(): Promise<AvailableRoutes | null>;
   deleteUserStates(): Promise<number>;
   deleteUserStateData(state: string): Promise<number>;
@@ -125,9 +148,7 @@ export type UserStateService<AvailableRoutes extends string = string> = {
   ): Promise<void>;
 };
 
-export type MutualControllerConstructedParams<
-  G extends FrameworkGenerics = FrameworkGenerics
-> = {
+export type MutualControllerConstructedParams = {
   botId: number;
 
   chat: {
@@ -143,8 +164,6 @@ export type MutualControllerConstructedParams<
   isAction: boolean;
 
   isMessageFromTheBot: boolean;
-
-  services: { userStateService: UserStateService<G['AR']> };
 };
 export type MiddlewareConstructedParams<
   AvailableRoutes extends string = string
@@ -156,12 +175,12 @@ export type MiddlewareConstructedParams<
     languageCode?: string;
   };
 
-  services: { userStateService?: UserStateService<AvailableRoutes> };
+  services: { usersStateService: UsersStateService<AvailableRoutes> };
 };
 
 export type ControllerConstructedParams<
   G extends FrameworkGenerics = FrameworkGenerics
-> = MutualControllerConstructedParams<G> & {
+> = MutualControllerConstructedParams & {
   message?: TeleMessage;
   callback?: {
     message?: TeleMessage;
@@ -182,6 +201,9 @@ export type ControllerConstructedParams<
   render: RenderCurried;
   renderToChat: RenderToChatCurried;
   outerSender: OuterSenderCurried;
+  notify: NotifyCurried;
+
+  services: { userStateService: UserStateService<G['AR']> };
 
   components: {
     goBack: {
@@ -253,7 +275,7 @@ export type ControllerConstructedParams<
 };
 
 export type Route<G extends FrameworkGenerics = FrameworkGenerics> = {
-  method: (d: ControllerConstructedParams) => Promise<void | false>;
+  method: (d: ControllerConstructedParams) => Promise<void | false>; // false - to prevent state change
   availableFrom: ('command' | 'message' | 'callback')[];
   commands?: string[];
   routes?: G['AR'][];

@@ -18,10 +18,13 @@ import { StorageRepository } from 'repository/storageTypes';
 import { getUnitedData } from 'service/stateDataService';
 import { goBackProcessor } from 'controller/controllers';
 import makeGoBack from 'components/goBack';
-import makeUserStateService from 'service/userStateService';
+import makeUserStateService, {
+  makeUsersStateService,
+} from 'service/userStateService';
 import makeEmptyStateMessage from 'components/emptyStateMessage';
 import { makePaging } from 'components/paging';
 import { makeBuildInlineMarkupButton } from 'components/button';
+import { makeNotify } from 'controller/notify';
 
 // Dig message and callback
 function separateMessageAndCallback(libParams: LibParams): {
@@ -42,22 +45,16 @@ function separateMessageAndCallback(libParams: LibParams): {
 function buildMutualParams<G extends FrameworkGenerics = FrameworkGenerics>({
   botId,
   libParams,
-  storage,
 }: {
   botId: number;
   libParams: LibParams;
-  storage: StorageRepository;
-}): MutualControllerConstructedParams<G> {
+}): MutualControllerConstructedParams {
   const { message, callback } = separateMessageAndCallback(libParams);
 
   const chatId = libParams.ctx.chatId!;
 
   const languageCode = (message?.from?.language_code ||
     callback?.from.language_code)! as G['AL'];
-
-  const services = {
-    userStateService: makeUserStateService<G['AR']>(storage, chatId),
-  };
 
   const isCommand = libParams.isCommand ?? false;
   const isMessage = libParams.isMessage ?? false;
@@ -80,8 +77,6 @@ function buildMutualParams<G extends FrameworkGenerics = FrameworkGenerics>({
     isMessage,
 
     isMessageFromTheBot: message.from?.id === botId,
-
-    services,
   };
 }
 
@@ -108,8 +103,11 @@ export function constructServiceParams<
     libParams,
     storage,
     routes: botConfig.routes,
+    services: {
+      usersStateService: makeUsersStateService({ storage }),
+    },
 
-    ...buildMutualParams<G>({ botId, libParams, storage }),
+    ...buildMutualParams<G>({ botId, libParams }),
   };
 }
 
@@ -141,11 +139,17 @@ export async function constructParams<
   const mutualParams = buildMutualParams<G>({
     botId,
     libParams,
-    storage,
   });
 
-  const currentState =
-    await mutualParams.services.userStateService.getUserCurrentState();
+  const services = {
+    userStateService: makeUserStateService<G['AR']>({
+      storage,
+      chatId: mutualParams.chat.id,
+      currentState: routeName,
+    }),
+  };
+
+  const currentState = await services.userStateService.getUserCurrentState();
   const isStepForward =
     !isStepBack && currentState !== null && routeName !== currentState;
 
@@ -168,7 +172,7 @@ export async function constructParams<
 
   const unitedData = await getUnitedData(
     callback,
-    mutualParams.services.userStateService,
+    services.userStateService,
     routeName,
     actionName
   );
@@ -176,7 +180,7 @@ export async function constructParams<
   const pagingComponents = makePaging({
     type: routeName,
     getDefaultText: botConfig?.defaultTextGetters,
-    userStateService: mutualParams.services.userStateService,
+    userStateService: services.userStateService,
     i18n,
     unitedData,
     messageText:
@@ -187,6 +191,17 @@ export async function constructParams<
     buildPageButton: buttonBuilders.buildPage,
     buildGoBackButton: goBackComponents.buildButton,
     buildClearSearchButton: buttonBuilders.buildClearSearch,
+  });
+
+  const render = makeRender({
+    bot,
+    routeName,
+    currentState,
+    userStateService: services.userStateService,
+    chatId: mutualParams.chat.id,
+    isCommand: mutualParams.isCommand,
+    isMessage: mutualParams.isMessage,
+    routes: botConfig.routes,
   });
 
   return {
@@ -209,23 +224,23 @@ export async function constructParams<
 
     goBackAction: goBackProcessor,
 
-    render: makeRender({
-      bot,
-      routeName,
-      currentState,
-      userStateService: mutualParams.services.userStateService,
-      chatId: mutualParams.chat.id,
-      isCommand: mutualParams.isCommand,
-      isMessage: mutualParams.isMessage,
-      routes: botConfig.routes,
-    }),
+    render,
     renderToChat: makeRenderToChat<G>({
       bot,
       routeName,
       storage,
       routes: botConfig.routes,
     }),
-    outerSender: makeOuterSender(bot, mutualParams.services.userStateService),
+    outerSender: makeOuterSender(bot, services.userStateService),
+    notify: makeNotify(
+      bot,
+      render,
+      goBackComponents.buildLayout,
+      services.userStateService,
+      callback?.id
+    ),
+
+    services,
 
     components: {
       goBack: goBackComponents,
@@ -259,9 +274,7 @@ export function buildMiddlewareParams<AvailableRoutes extends string>({
       languageCode: ctx.message?.from.language_code,
     },
     services: {
-      userStateService: chatId
-        ? makeUserStateService(storage, chatId)
-        : undefined,
+      usersStateService: makeUsersStateService({ storage }),
     },
   };
 }

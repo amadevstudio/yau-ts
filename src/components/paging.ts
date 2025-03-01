@@ -1,11 +1,13 @@
 import type { InlineMarkupButton } from 'controller/types';
-import type {
-  BotConfig,
-  ControllerConstructedParams,
-  FrameworkGenerics,
-  I18n,
-  SpecialStateKeywords,
-  UserStateService,
+import {
+  pageFieldName,
+  searchFieldName,
+  type BotConfig,
+  type ControllerConstructedParams,
+  type FrameworkGenerics,
+  type I18n,
+  type SpecialStateKeywords,
+  type UserStateService,
 } from 'core/types';
 import type { ButtonData } from '../controller/types';
 

@@ -5,6 +5,7 @@ import {
   TeleMessage,
   TeleInlineKeyboardButton,
   TeleKeyboardButton,
+  OuterSenderCurried,
 } from 'core/types';
 import {
   FrameworkGenerics,
@@ -106,7 +107,11 @@ export function makeRenderToChat<
     messages: MessageStructure[],
     params?: RenderParams
   ) => {
-    const userStateService = makeUserStateService<G['AR']>(storage, chatId);
+    const userStateService = makeUserStateService<G['AR']>({
+      storage,
+      chatId,
+      currentState: routeName,
+    });
 
     return render<G>(bot, userStateService, chatId, messages, {
       ...params,

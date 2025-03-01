@@ -37,22 +37,22 @@ export function setupServiceMiddlewares<
 
   // Log states in development
   async function logStates(ctx: TeleContext, next: NextF): Promise<void> {
-    const userStateService =
-      makeMiddlewareParams(ctx).services.userStateService;
+    const mwp = makeMiddlewareParams(ctx);
+    const usersStateService = mwp.services.usersStateService;
 
-    if (userStateService) {
+    if (mwp.chat.id) {
       ctx.$frameworkLogger.debug(
         'States before interaction:',
-        await userStateService.getUserStates()
+        await usersStateService.getUserStates(mwp.chat.id)
       );
     }
 
     await next();
 
-    if (userStateService) {
+    if (mwp.chat.id) {
       ctx.$frameworkLogger.debug(
         'States after interaction:',
-        await userStateService.getUserStates()
+        await usersStateService.getUserStates(mwp.chat.id)
       );
     }
   }

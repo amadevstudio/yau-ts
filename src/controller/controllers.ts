@@ -10,7 +10,9 @@ function devLog(d: ConstructedServiceParams, ...params: unknown[]) {
 
 export async function correctEmptyStateInputState(d: ConstructedServiceParams) {
   const [prev, curr] =
-    await d.services.userStateService.getUserPreviousAndCurrentStates();
+    await d.services.usersStateService.getUserPreviousAndCurrentStates(
+      d.chat.id
+    );
   if (prev === undefined) {
     return;
   }
@@ -36,15 +38,15 @@ export async function correctEmptyStateInputState(d: ConstructedServiceParams) {
     devLog(
       d,
       `States before state correction`,
-      await d.services.userStateService.getUserStates()
+      await d.services.usersStateService.getUserStates(d.chat.id)
     );
 
-    await d.services.userStateService.deleteUserCurrentState();
+    await d.services.usersStateService.deleteUserCurrentState(d.chat.id);
 
     devLog(
       d,
       `States after state correction`,
-      await d.services.userStateService.getUserStates()
+      await d.services.usersStateService.getUserStates(d.chat.id)
     );
   }
 }
@@ -53,10 +55,12 @@ export async function goBackProcessor(d: ConstructedServiceParams) {
   devLog(
     d,
     `States before goBack`,
-    await d.services.userStateService.getUserStates()
+    await d.services.usersStateService.getUserStates(d.chat.id)
   );
 
-  const prev = await d.services.userStateService.getUserPreviousState();
+  const prev = await d.services.usersStateService.getUserPreviousState(
+    d.chat.id
+  );
 
   // TODO: const activePrev = customPrev === undefined ? prev : customPrev;
   const activePrev = prev;
@@ -86,7 +90,7 @@ export async function goBackProcessor(d: ConstructedServiceParams) {
   );
 
   // Clean state to new current
-  const allStates = await d.services.userStateService.getUserStates();
+  const allStates = await d.services.usersStateService.getUserStates(d.chat.id);
   devLog(
     d,
     `Active prev route is ${activePrev}.`,
@@ -98,17 +102,20 @@ export async function goBackProcessor(d: ConstructedServiceParams) {
     if (state === activePrev) {
       break;
     }
-    await d.services.userStateService.deleteUserCurrentState();
+    await d.services.usersStateService.deleteUserCurrentState(d.chat.id);
   }
 
   // Clean state data of unrelated previous states
   for (const childRoute of d.routes[activePrev]?.routes ?? []) {
-    await d.services.userStateService.deleteUserStateData(childRoute);
+    await d.services.usersStateService.deleteUserStateData(
+      d.chat.id,
+      childRoute
+    );
   }
 
   devLog(
     d,
     `States after goBack:`,
-    await d.services.userStateService.getUserStates()
+    await d.services.usersStateService.getUserStates(d.chat.id)
   );
 }

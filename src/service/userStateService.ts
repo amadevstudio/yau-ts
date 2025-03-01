@@ -1,6 +1,6 @@
 import { defaultRouteNamesMap } from 'controller/defaultRoutes';
 import { ResultMessageStructure } from 'controller/types';
-import { UserStateService } from 'core/types';
+import { UsersStateService, UserStateService } from 'core/types';
 import { getAllValues } from 'lib/objects';
 import { StorageRepository } from 'repository/storageTypes';
 
@@ -26,32 +26,65 @@ function getAllBaseKeys() {
   return getAllValues(baseKeys) as StateFunction[];
 }
 
-export function makeUsersStateService<AvailableRoutes extends string = string>(
-  storage: StorageRepository
-) {
+export function makeUsersStateService<AvailableRoutes extends string = string>({
+  storage,
+}: {
+  storage: StorageRepository;
+}): UsersStateService<AvailableRoutes> {
   return {
-    getUserStates: async (chatId: number): Promise<AvailableRoutes[]> => {
+    getUserStates: async (chatId) => {
       return storage.lrange(baseKeys.states(chatId), 0, -1) as Promise<
         AvailableRoutes[]
       >;
     },
-    getUserCurrentState: async (
-      chatId: number
-    ): Promise<AvailableRoutes | null> => {
+    getUserCurrentState: async (chatId) => {
       return storage.lindex(
         baseKeys.states(chatId),
         -1
       ) as Promise<AvailableRoutes | null>;
+    },
+    getUserPreviousState: async (chatId) => {
+      return storage.lindex(
+        baseKeys.states(chatId),
+        -2
+      ) as Promise<AvailableRoutes | null>;
+    },
+    getUserPreviousAndCurrentStates: async (chatId) => {
+      const [prev, curr] = await storage.lrange(
+        baseKeys.states(chatId),
+        -2,
+        -1
+      );
+      if (curr === undefined) {
+        return [curr, prev] as (AvailableRoutes | undefined)[]; // if current is undefined, it could be ["current", undefined]
+      }
+
+      return [prev, curr] as (AvailableRoutes | undefined)[];
+    },
+    deleteUserCurrentState: async (chatId) => {
+      return storage.rpop(
+        baseKeys.states(chatId)
+      ) as Promise<AvailableRoutes | null>;
+    },
+    deleteUserStateData: async (chatId, state) => {
+      return storage.hdel(baseKeys.stateData(chatId), state);
     },
   } as const;
 }
 
 export default function makeUserStateService<
   AvailableRoutes extends string = string
->(
-  storage: StorageRepository,
-  chatId: number
-): UserStateService<AvailableRoutes> {
+>({
+  storage,
+  chatId,
+  currentState,
+}: {
+  storage: StorageRepository;
+  chatId: number;
+  currentState: AvailableRoutes;
+}): UserStateService<AvailableRoutes> {
+  const usersStateService = makeUsersStateService<AvailableRoutes>({ storage });
+
   const methods: UserStateService<AvailableRoutes> = {
     //  User repo remover
 
@@ -65,39 +98,20 @@ export default function makeUserStateService<
 
     // User state, getters
 
-    getUserStates: async (): Promise<AvailableRoutes[]> => {
-      return storage.lrange(baseKeys.states(chatId), 0, -1) as Promise<
-        AvailableRoutes[]
-      >;
+    getUserStates: async () => {
+      return usersStateService.getUserStates(chatId);
     },
 
-    getUserCurrentState: async (): Promise<AvailableRoutes | null> => {
-      return storage.lindex(
-        baseKeys.states(chatId),
-        -1
-      ) as Promise<AvailableRoutes | null>;
+    getUserCurrentState: async () => {
+      return usersStateService.getUserCurrentState(chatId);
     },
 
-    getUserPreviousState: async (): Promise<AvailableRoutes | null> => {
-      return storage.lindex(
-        baseKeys.states(chatId),
-        -2
-      ) as Promise<AvailableRoutes | null>;
+    getUserPreviousState: async () => {
+      return usersStateService.getUserPreviousState(chatId);
     },
 
-    getUserPreviousAndCurrentStates: async (): Promise<
-      (AvailableRoutes | undefined)[]
-    > => {
-      const [prev, curr] = await storage.lrange(
-        baseKeys.states(chatId),
-        -2,
-        -1
-      );
-      if (curr === undefined) {
-        return [curr, prev] as (AvailableRoutes | undefined)[]; // if current is undefined, it could be ["current", undefined]
-      }
-
-      return [prev, curr] as (AvailableRoutes | undefined)[];
+    getUserPreviousAndCurrentStates: async () => {
+      return usersStateService.getUserPreviousAndCurrentStates(chatId);
     },
 
     getUserStateData: async (
@@ -150,12 +164,24 @@ export default function makeUserStateService<
       );
     },
 
+    addUserCurrentStateData: async (
+      data: Record<string, unknown>
+    ): Promise<number> => {
+      if (currentState === undefined) {
+        throw new Error('Current state is undefined');
+      }
+
+      return storage.hset(
+        baseKeys.stateData(chatId),
+        currentState,
+        JSON.stringify(data)
+      );
+    },
+
     // User state, removers
 
-    deleteUserCurrentState: async (): Promise<AvailableRoutes | null> => {
-      return storage.rpop(
-        baseKeys.states(chatId)
-      ) as Promise<AvailableRoutes | null>;
+    deleteUserCurrentState: async () => {
+      return usersStateService.deleteUserCurrentState(chatId);
     },
 
     deleteUserStates: async (): Promise<number> => {
@@ -163,7 +189,7 @@ export default function makeUserStateService<
     },
 
     deleteUserStateData: async (state: string): Promise<number> => {
-      return storage.hdel(baseKeys.stateData(chatId), state);
+      return usersStateService.deleteUserStateData(chatId, state);
     },
 
     deleteUserStatesData: async (): Promise<void> => {
@@ -214,6 +240,3 @@ export default function makeUserStateService<
 
   return methods;
 }
-
-export type UsersStateService = ReturnType<typeof makeUsersStateService>;
-// export type UserStateService = ReturnType<typeof makeUserStateService>;
