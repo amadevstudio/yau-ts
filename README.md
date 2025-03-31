@@ -133,7 +133,8 @@ const botConfig: BotConfig<G> = {
 };
 
 const bot = await initializeBot(ENV.BOT_TOKEN, ENV.REDIS_URL, botConfig);
-bot.start();```
+bot.start();
+```
 
 - i18n.ts
 
